@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>مزرعة الفراخ</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#e8731a">
+<meta name="theme-color" content="#0f4c47">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="المزرعة">
@@ -13,7 +13,7 @@
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-:root{--or:#e8731a;--od:#b9560a;--ol:#fff1e3;--bg:#fffaf5;--card:#fff;--tx:#2b2118;--mu:#8a7767;--bd:#f1dfcf;--ok:#2e8b57;--bad:#c62828;color-scheme:light}
+:root{--or:#0f766e;--od:#b9560a;--ol:#fff1e3;--bg:#fffaf5;--card:#fff;--tx:#2b2118;--mu:#8a7767;--bd:#f1dfcf;--ok:#2e8b57;--bad:#c62828;color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:Cairo,system-ui,"Segoe UI",Tahoma,Arial,sans-serif;font-size:16px;padding-top:env(safe-area-inset-top,0px)}
 #app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
@@ -67,32 +67,39 @@ body.lo aside,body.lo #hd{display:none}body.lo #app{grid-template-columns:1fr}
 aside{box-shadow:0 -2px 12px rgba(185,86,10,.10)}}
 .ph{display:none}
 @media print{#sheet{display:none!important}aside,#hd,.noprint,#toast{display:none!important}#app{display:block}body{background:#fff}main{padding:0;max-width:none}.ph{display:block;font-weight:800;font-size:18px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #000}.card{box-shadow:none;break-inside:avoid;border:1px solid #ccc}td,th{white-space:normal}.cols{grid-template-columns:1fr}.sc{overflow:visible}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-/* ===== شكل جديد زي موقع الخرفان ===== */
-:root{--or:#5b5bd6;--od:#5b5bd6;--ol:#e9eafb;--bg:#f1f2fc;--card:#fff;--tx:#171a3a;--mu:#767aa3;--bd:#e9eafb;--ok:#16a34a;--bad:#e5484d;--sh:0 8px 24px rgba(60,60,140,.12)}
-.card{border:0;border-radius:26px;box-shadow:var(--sh)}
-h2{font-size:18px}
-input,select{border:2px solid var(--bd);border-radius:16px;padding:12px;background:var(--bg)}
+/* ===== هوية مزرعة الفراخ: أخضر مزرعة + عنبري، كروت مسطحة ===== */
+:root{--or:#0f766e;--od:#0b5d57;--ol:#dff1ed;--ac:#f59e0b;--bg:#f4f0e4;--card:#fffdf8;--tx:#1f2a28;--mu:#6b7a76;--bd:#e0d9c4;--ok:#15803d;--bad:#d9381e}
+body{background:var(--bg)}
+.card{background:var(--card);border:1.5px solid var(--bd);border-radius:14px;box-shadow:0 3px 0 var(--bd)}
+h2{font-size:17px;display:flex;align-items:center;gap:8px}
+h2::before{content:"";width:6px;height:18px;border-radius:3px;background:var(--ac);flex:none}
+input,select{background:#fff;border:1.5px solid #d8d1bd;border-radius:10px;padding:11px}
 input:focus,select:focus{outline:0;border-color:var(--or)}
-.pri{background:var(--or);border-radius:18px;padding:14px}
-.sec{border:0;background:var(--ol);color:var(--od);border-radius:14px;font-weight:700}
-th{font-size:12px;font-weight:700}td{border-bottom:0;border-top:1px solid var(--bd);padding:11px 10px}
-th:first-child,td:first-child{position:sticky;right:0;background:var(--card)}
-.hi,.hi td{background:var(--ol)}
-.al{background:var(--bg);border-radius:14px}.al.w{background:#fff6e5;border-right:4px solid #d97706}
-.bar{height:9px;border-radius:5px}
-aside{background:var(--card);border:0;box-shadow:var(--sh)}
-#nav button{border-radius:16px;font-weight:700}#nav button.on{background:var(--or);color:#fff}
-.hero{background:linear-gradient(135deg,#5b5bd6,#8a7be8);color:#fff;border-radius:32px;padding:22px;position:relative;overflow:hidden;box-shadow:var(--sh);margin-bottom:14px}
-.hero::before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.12);top:-110px;left:-70px}
-.hero>*{position:relative}.sm{font-size:13px;opacity:.85}.hero .big{font-size:40px;font-weight:800;color:#fff;margin:4px 0}
-.pbar{height:10px;border-radius:6px;background:rgba(255,255,255,.25);margin:12px 0 6px}.pbar i{display:block;height:100%;border-radius:6px;background:#fff}
-.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.tile{background:rgba(255,255,255,.2);border-radius:20px;padding:12px 6px;text-align:center}.tile b{display:block;font-size:19px;margin-top:4px}
+.pri{background:var(--or);border-radius:10px;padding:13px;box-shadow:0 3px 0 var(--od)}
+.pri:active{transform:translateY(2px);box-shadow:0 1px 0 var(--od)}
+.sec{background:transparent;border:1.5px solid var(--or);color:var(--od);border-radius:10px;font-weight:700}
+.pill{background:#fef3c7;color:#92400e}
+th{background:var(--ol);color:var(--od);font-size:12px;font-weight:800}
+td{border-top:0;border-bottom:1px solid var(--bd)}
+tr:nth-child(even) td{background:#faf6ea}
+th:first-child,td:first-child{position:sticky;right:0;background:var(--card)}th:first-child{background:var(--ol)}
+.hi,.hi td{background:var(--ol)!important;color:var(--od)}
+.al{background:#fff;border:1px solid var(--bd);border-radius:10px}.al.w{background:#fff7e0;border-right:5px solid var(--ac)}
+.bar{height:8px;border-radius:2px}
+aside{background:var(--card);border:0;border-left:1.5px solid var(--bd);box-shadow:none}
+.brand{color:var(--od)}
+#nav button{border-radius:10px;font-weight:700}#nav button.on{background:var(--ol);color:var(--od);box-shadow:inset -4px 0 0 var(--or)}
+.hero{background:radial-gradient(rgba(255,255,255,.09) 1.5px,transparent 1.5px) 0 0/16px 16px,#0f4c47;color:#fff;border-radius:18px;padding:20px;border-bottom:5px solid var(--ac);margin-bottom:14px}
+.sm{font-size:13px;opacity:.8}.hero .big{font-size:42px;font-weight:800;color:#fbbf24;margin:4px 0}
+.pbar{height:8px;border-radius:2px;background:rgba(255,255,255,.2);margin:12px 0 6px}.pbar i{display:block;height:100%;border-radius:2px;background:#fbbf24}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.tile{border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:10px 4px;text-align:center}.tile b{display:block;font-size:19px;margin-top:4px;color:#fbbf24}
 @media(max-width:820px){
-aside{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));border-radius:30px;padding:8px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-#nav button{border-radius:24px;color:var(--mu)}#nav button.on{background:var(--or);color:#fff}
-main{padding-bottom:120px}
-#sheet .sp{bottom:calc(86px + env(safe-area-inset-bottom,0px));border-radius:24px}#sheet .sp button.on{background:var(--or);color:#fff}
-#toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}}
+aside{left:0;right:0;bottom:0;border:0;border-top:1.5px solid var(--bd);border-radius:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:none}
+#nav button{color:var(--mu);border-radius:10px}#nav button.on{background:var(--ol);color:var(--od);box-shadow:inset 0 3px 0 var(--or)}
+main{padding-bottom:100px}
+#sheet .sp{bottom:calc(76px + env(safe-area-inset-bottom,0px));border-radius:14px;background:var(--card);border:1.5px solid var(--bd)}#sheet .sp button.on{background:var(--ol);color:var(--od)}
+#toast{bottom:calc(90px + env(safe-area-inset-bottom,0px))}}
 </style>
 </head>
 <body>
@@ -241,7 +248,7 @@ function delDay(n){rm(n);save();render()}
 function chart(d){const pts=d.filter(e=>e.w),X=n=>40+n/45*540,Y=w=>230-w/3400*210;
  let g='';[0,1000,2000,3000].forEach(v=>g+=`<line x1="40" x2="580" y1="${Y(v)}" y2="${Y(v)}" stroke="#f1dfcf"/><text x="34" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="#8a7767">${v}</text>`);
  [0,10,20,30,40].forEach(n=>g+=`<text x="${X(n)}" y="248" text-anchor="middle" font-size="10" fill="#8a7767">${n}</text>`);
- return `<svg viewBox="0 0 600 255" style="width:100%;direction:ltr">${g}<polyline points="${W.map((w,i)=>X(i)+','+Y(w)).join(' ')}" fill="none" stroke="#b8a898" stroke-width="2" stroke-dasharray="5 4"/>${pts.length?`<polyline points="${pts.map(e=>X(e.n)+','+Y(e.w)).join(' ')}" fill="none" stroke="#e8731a" stroke-width="3"/>`+pts.map(e=>`<circle cx="${X(e.n)}" cy="${Y(e.w)}" r="3.5" fill="#e8731a"/>`).join(''):''}</svg><p class="mu"><b style="color:#e8731a">━</b> وزنك &nbsp; <b>┅</b> الاستاندر (جم، حسب يوم الدورة)</p>`}
+ return `<svg viewBox="0 0 600 255" style="width:100%;direction:ltr">${g}<polyline points="${W.map((w,i)=>X(i)+','+Y(w)).join(' ')}" fill="none" stroke="#b8a898" stroke-width="2" stroke-dasharray="5 4"/>${pts.length?`<polyline points="${pts.map(e=>X(e.n)+','+Y(e.w)).join(' ')}" fill="none" stroke="#0f766e" stroke-width="3"/>`+pts.map(e=>`<circle cx="${X(e.n)}" cy="${Y(e.w)}" r="3.5" fill="#0f766e"/>`).join(''):''}</svg><p class="mu"><b style="color:#0f766e">━</b> وزنك &nbsp; <b>┅</b> الاستاندر (جم، حسب يوم الدورة)</p>`}
 function vMeds(){const d=days().filter(e=>e.meds&&e.meds.length);
  if(!d.length)return '<div class="card"><p class="mu">لسه مفيش أدوية متسجلة. بتضيفها من تبويب اليومية.</p></div>';
  const cell=(e,w)=>e.meds.filter(a=>String(a.w||1)==w).map(a=>`<div>${esc(a.name)} <small class="mu">${a.q} ${esc(a.u||'')}</small></div>`).join('');
@@ -302,7 +309,7 @@ function lc(d,key,min,max,band,col,ticks){const pts=d.filter(e=>e[key]),X=n=>40+
  if(pts.length)g+=`<polyline points="${pts.map(e=>X(e.n)+','+Y(e[key])).join(' ')}" fill="none" stroke="${col}" stroke-width="3"/>`+pts.map(e=>`<circle cx="${X(e.n)}" cy="${Y(e[key])}" r="3.5" fill="${col}"/>`).join('');
  return `<svg viewBox="0 0 600 255" style="width:100%;direction:ltr">${g}</svg>`}
 function tchart(d){if(!d.some(e=>e.t||e.h))return '';
- return `<div class="card"><h2>حرارة ورطوبة العنبر</h2>${lc(d,'t',15,40,trange,'#e8731a',[20,25,30,35,40])}<p class="mu">الحرارة °م — الأخضر = المدى المناسب لعمر الفراخ (إرشادي)</p>${lc(d,'h',20,90,()=>[50,70],'#1e6fb8',[30,50,70,90])}<p class="mu">الرطوبة % — المناسب حوالي 50 إلى 70</p></div>`}
+ return `<div class="card"><h2>حرارة ورطوبة العنبر</h2>${lc(d,'t',15,40,trange,'#0f766e',[20,25,30,35,40])}<p class="mu">الحرارة °م — الأخضر = المدى المناسب لعمر الفراخ (إرشادي)</p>${lc(d,'h',20,90,()=>[50,70],'#1e6fb8',[30,50,70,90])}<p class="mu">الرطوبة % — المناسب حوالي 50 إلى 70</p></div>`}
 function wa(txt,ph){window.open('https://wa.me/'+(ph||'')+'?text='+encodeURIComponent(txt),'_blank')}
 function phn(p){p=String(p||'').replace(/\D/g,'');if(p.startsWith('00'))return p.slice(2);return p.startsWith('0')?'2'+p:p}
 function shareDay(n){const d=days(),e=d.find(x=>x.n==n);if(!e)return;let dead=0;d.forEach(x=>{if(x.n<=n)dead+=x.dead});const alive=S.chicks-dead;
@@ -445,7 +452,7 @@ function closeCycle(){const d=days();if(!d.length)return toast('مفيش دور�
  save();toast('اتقفلت ✓ ونزلت نسخة احتياطية');render()}
 function bars(items,fmt){const n=items.length,vs=items.map(i=>i.v),mx=Math.max(0,...vs),mn=Math.min(0,...vs),rg=(mx-mn)||1,top=24,h=90,y0=top+mx/rg*h,bw=Math.min(44,240/n),st=280/n;
  let g=`<line x1="10" x2="290" y1="${y0}" y2="${y0}" stroke="#d9c7b5"/>`;
- items.forEach((it,i)=>{const cx=10+st*i+st/2,hh=Math.abs(it.v)/rg*h,y=it.v>=0?y0-hh:y0;g+=`<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${Math.max(hh,1)}" rx="3" fill="${it.v<0?'#c62828':'#e8731a'}"/><text x="${cx}" y="${it.v>=0?y-4:y+hh+11}" text-anchor="middle" font-size="10" fill="#2b2118">${fmt(it.v)}</text><text x="${cx}" y="148" text-anchor="middle" font-size="9" fill="#8a7767">${esc(it.l.slice(0,9))}</text>`});
+ items.forEach((it,i)=>{const cx=10+st*i+st/2,hh=Math.abs(it.v)/rg*h,y=it.v>=0?y0-hh:y0;g+=`<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${Math.max(hh,1)}" rx="3" fill="${it.v<0?'#c62828':'#0f766e'}"/><text x="${cx}" y="${it.v>=0?y-4:y+hh+11}" text-anchor="middle" font-size="10" fill="#2b2118">${fmt(it.v)}</text><text x="${cx}" y="148" text-anchor="middle" font-size="9" fill="#8a7767">${esc(it.l.slice(0,9))}</text>`});
  return `<svg viewBox="0 0 300 155" style="width:100%;direction:ltr">${g}</svg>`}
 function vRep(){const s=stats();
  if(!s.d.length)return '<div class="card"><h2>تقرير الدورة الحالية</h2><p class="mu">سجّل أول يوم من اليومية عشان يظهر التقرير.</p></div>';
