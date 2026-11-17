@@ -339,11 +339,17 @@ function addExp(){const a=num($('#ea').value),c=$('#ec').value,n=$('#en').value.
 function setCat(i,v){S.exp[i].c=v;save();render()}
 function delExp(i){S.exp.splice(i,1);save();render()}
 function setS(k,v){S[k]=num(v);save();render()}
+function expTable(t){
+ const labels=Object.values(CAT).map(v=>v[1]);
+ const rows=S.exp.map((x,i)=>({x,i})).sort((a,b)=>(a.x.d||'').localeCompare(b.x.d||'')).map(({x,i})=>{
+  const note=labels.includes(x.n)?'':esc(x.n);
+  return `<tr><td>${esc(x.d||'')}</td><td><select style="width:auto;max-width:125px;font-size:13px;padding:4px" onchange="setCat(${i},this.value)">${Object.keys(CAT).map(k=>`<option value="${k}"${catOf(x)==k?' selected':''}>${CAT[k][0]} ${CAT[k][1]}</option>`).join('')}</select></td><td style="white-space:normal">${note}</td><td><b>${f0(x.a)}</b></td><td><button class="x" onclick="delExp(${i})">✕</button></td></tr>`}).join('');
+ const lab=laborDue()?`<tr><td></td><td colspan="2" style="white-space:normal">👷 أجور العاملين (من تبويب العاملين)</td><td><b>${f0(laborDue())}</b></td><td></td></tr>`:'';
+ if(!rows&&!lab)return '<p class="mu" style="margin-top:12px">لسه مفيش مصاريف.</p>';
+ return `<div class="sc" style="margin-top:12px"><table style="width:100%"><tr><th>التاريخ</th><th>النوع</th><th>البند</th><th>المبلغ</th><th></th></tr>${rows}${lab}<tr class="hi"><td colspan="3">الإجمالي</td><td>${f0(t)}</td><td></td></tr></table></div>`}
 function vExp(){const t=totExp();
 return `<div class="cols"><div><div class="card"><h2>المصاريف</h2><div class="g"><label>النوع<select id="ec">${Object.keys(CAT).map(k=>`<option value="${k}">${CAT[k][0]} ${CAT[k][1]}</option>`).join('')}</select></label><label>البند / ملاحظة (اختياري)<input id="en"></label><label>المبلغ<input id="ea" type="number" step="any" inputmode="decimal"></label><label>التاريخ<input id="ed" type="date" value="${today()}"></label></div><button class="pri" onclick="addExp()">إضافة</button>
-${S.exp.map((x,i)=>`<div class="li" style="flex-wrap:wrap"><span>${esc(x.n)} <small class="mu">${esc(x.d||'')}</small></span><b>${f0(x.a)}</b><button class="x" onclick="delExp(${i})">✕</button><select style="font-size:12px;padding:4px" onchange="setCat(${i},this.value)">${Object.keys(CAT).map(k=>`<option value="${k}"${catOf(x)==k?' selected':''}>${CAT[k][0]} ${CAT[k][1]}</option>`).join('')}</select></div>`).join('')}
-${laborDue()?`<div class="li"><span>👷 أجور العاملين (من تبويب العاملين)</span><b>${f0(laborDue())}</b></div>`:''}
-<div class="li"><b>الإجمالي</b><b>${f0(t)}</b></div></div>
+${expTable(t)}</div>
 <div class="card"><h2>الأسعار</h2><div class="g">
 <label>سعر كيلو الفراخ المتوقع<input type="number" step="any" inputmode="decimal" value="${S.price||''}" onchange="setS('price',this.value)"></label>
 <label>سعر كيلو العلف<input type="number" step="any" inputmode="decimal" value="${S.feedPrice||''}" onchange="setS('feedPrice',this.value)"></label>
