@@ -100,6 +100,17 @@ aside{left:0;right:0;bottom:0;border:0;border-top:1.5px solid var(--bd);border-r
 main{padding-bottom:100px}
 #sheet .sp{bottom:calc(76px + env(safe-area-inset-bottom,0px));border-radius:14px;background:var(--card);border:1.5px solid var(--bd)}#sheet .sp button.on{background:var(--ol);color:var(--od)}
 #toast{bottom:calc(90px + env(safe-area-inset-bottom,0px))}}
+/* ===== ضبط العرض موبيل وكمبيوتر ===== */
+html,body{overflow-x:hidden}
+#app{grid-template-columns:220px minmax(0,1fr)}
+main,.cols>*,.g>*,.card,label{min-width:0}
+input,select{min-width:0;max-width:100%}
+input[type=date]{-webkit-appearance:none;appearance:none;min-height:46px;text-align:center}
+.sc{max-width:100%;-webkit-overflow-scrolling:touch}
+.card h2,.card p{overflow-wrap:anywhere}
+@media(max-width:820px){#app{grid-template-columns:minmax(0,1fr)}.tiles{gap:6px}.hero .big{font-size:34px}.tile b{font-size:17px}main{padding:12px 12px 100px}}
+@media(min-width:821px){main{padding:24px 28px}.cols{gap:18px}.hero{padding:26px}.hero .big{font-size:52px}aside{position:sticky;top:0;height:100vh}}
+@media(max-width:820px){.sc td,.sc th{padding:9px 5px}.sc select{max-width:92px;font-size:12px;padding:4px 2px}}
 </style>
 </head>
 <body>
