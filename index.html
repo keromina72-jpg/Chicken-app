@@ -219,6 +219,9 @@ function vMeds(){const d=days().filter(e=>e.meds&&e.meds.length);
  return `<div class="card"><h2>سجل الأدوية</h2><p class="mu">بتتسجل من تبويب اليومية، وبتتوزع هنا على السقوات.</p><div class="sc"><table><tr><th>يوم</th><th>تاريخ</th><th>سقوة 1</th><th>سقوة 2</th><th>سقوة 3</th></tr>${rows}</table></div></div>`}
 function fkv(){return Object.assign({b:.3,n:1.2,a:2.7},S.fk||{})}
 function setFk(k,v){S.fk=Object.assign({},S.fk||{},{[k]:num(v)});save();render()}
+function calcFeed(w){const N=S.chicks||0,pb=$('#cpb'),t=$('#ct'),r=$('#cres');if(!N){r.textContent='اكتب عدد الكتاكيت الأول من اليومية';return}
+ if(w=='pb'){const v=num(pb.value);t.value=v?+(v*N/1000).toFixed(3):''}else{const v=num(t.value);pb.value=v?+(v*1000/N).toFixed(3):''}
+ const kg=num(t.value)*1000;r.textContent=kg?`${f0(kg)} كجم = ${+(kg/50).toFixed(1)} شكارة — ${+num(pb.value)} كجم للفرخة`:''}
 function feedBoxes(d,alive){
  const k=fkv(),nm=['بادي','نامي','ناهي'],pb=[k.b,k.n,k.a],N=S.chicks||0;
  const exp=pb.map(x=>N*x),tE=sum(exp,x=>x),tA=sum(d,e=>e.feed||0);
@@ -230,7 +233,8 @@ function feedBoxes(d,alive){
  const row2=`<div class="g" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">${nm.map((n,i)=>`<div ${bx}><div class="mu">علف ${n}</div><div class="big" style="font-size:18px">${f0(eat[i])} <small>كجم</small></div><small class="mu">أكلت (${bg(eat[i])})</small><div style="margin-top:6px;border-top:1px dashed var(--bd);padding-top:6px"><b>${f0(exp[i])}</b> <small class="mu">كجم متوقع (${pb[i]} للفرخة)</small><br><small class="${eat[i]>exp[i]+.5?'bad':'mu'}">${eat[i]>exp[i]+.5?'زيادة '+f0(eat[i]-exp[i]):'فاضل '+f0(Math.max(0,exp[i]-eat[i]))} كجم</small></div></div>`).join('')}</div>`;
  const inp=(c,l)=>`<label>${l}<input type="number" step="any" inputmode="decimal" value="${pb[c]}" onchange="setFk('${['b','n','a'][c]}',this.value)"></label>`;
  const row3=`<div class="card noprint" style="padding:10px"><div class="mu" style="font-size:13px;margin-bottom:6px">كام كجم علف للفرخة من كل نوع (عدد الفراخ ${f0(N)})</div><div class="g" style="grid-template-columns:repeat(3,1fr)">${inp(0,'بادي (كجم/فرخة)')}${inp(1,'نامي (كجم/فرخة)')}${inp(2,'ناهي (كجم/فرخة)')}</div><small class="mu">العلف المسجل بيتحسب بالترتيب: بادي لحد ما يخلص حصته، وبعدها نامي، وبعدها ناهي. الشكارة 50 كجم.</small></div>`;
- return row1+row2+row3}
+ const rowC=`<div class="card noprint" style="padding:10px"><div class="mu" style="font-size:13px;margin-bottom:6px">🧮 حاسبة العلف (على ${f0(N)} فرخة)</div><div class="g" style="grid-template-columns:1fr 1fr"><label>كجم للفرخة<input id="cpb" type="number" step="any" inputmode="decimal" oninput="calcFeed('pb')"></label><label>إجمالي العلف (طن)<input id="ct" type="number" step="any" inputmode="decimal" oninput="calcFeed('t')"></label></div><div id="cres" style="margin-top:8px;font-weight:700;color:var(--od)"></div><small class="mu">اكتب في أي خانة والتانية تتحسب لوحدها.</small></div>`;
+ return row1+row2+rowC+row3}
 function vTable(){const d=days();if(!d.length)return '<div class="card"><p class="mu">لسه مفيش تسجيلات. سجّل أول يوم من تبويب اليومية.</p></div>';
  let dead=0,feed=0;const own=role=='owner';
  const rows=d.map(e=>{dead+=e.dead;feed+=e.feed;e.alive=S.chicks-dead;e.cf=feed;
