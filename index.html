@@ -67,6 +67,32 @@ body.lo aside,body.lo #hd{display:none}body.lo #app{grid-template-columns:1fr}
 aside{box-shadow:0 -2px 12px rgba(185,86,10,.10)}}
 .ph{display:none}
 @media print{#sheet{display:none!important}aside,#hd,.noprint,#toast{display:none!important}#app{display:block}body{background:#fff}main{padding:0;max-width:none}.ph{display:block;font-weight:800;font-size:18px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #000}.card{box-shadow:none;break-inside:avoid;border:1px solid #ccc}td,th{white-space:normal}.cols{grid-template-columns:1fr}.sc{overflow:visible}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+/* ===== شكل جديد زي موقع الخرفان ===== */
+:root{--or:#5b5bd6;--od:#5b5bd6;--ol:#e9eafb;--bg:#f1f2fc;--card:#fff;--tx:#171a3a;--mu:#767aa3;--bd:#e9eafb;--ok:#16a34a;--bad:#e5484d;--sh:0 8px 24px rgba(60,60,140,.12)}
+.card{border:0;border-radius:26px;box-shadow:var(--sh)}
+h2{font-size:18px}
+input,select{border:2px solid var(--bd);border-radius:16px;padding:12px;background:var(--bg)}
+input:focus,select:focus{outline:0;border-color:var(--or)}
+.pri{background:var(--or);border-radius:18px;padding:14px}
+.sec{border:0;background:var(--ol);color:var(--od);border-radius:14px;font-weight:700}
+th{font-size:12px;font-weight:700}td{border-bottom:0;border-top:1px solid var(--bd);padding:11px 10px}
+th:first-child,td:first-child{position:sticky;right:0;background:var(--card)}
+.hi,.hi td{background:var(--ol)}
+.al{background:var(--bg);border-radius:14px}.al.w{background:#fff6e5;border-right:4px solid #d97706}
+.bar{height:9px;border-radius:5px}
+aside{background:var(--card);border:0;box-shadow:var(--sh)}
+#nav button{border-radius:16px;font-weight:700}#nav button.on{background:var(--or);color:#fff}
+.hero{background:linear-gradient(135deg,#5b5bd6,#8a7be8);color:#fff;border-radius:32px;padding:22px;position:relative;overflow:hidden;box-shadow:var(--sh);margin-bottom:14px}
+.hero::before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.12);top:-110px;left:-70px}
+.hero>*{position:relative}.sm{font-size:13px;opacity:.85}.hero .big{font-size:40px;font-weight:800;color:#fff;margin:4px 0}
+.pbar{height:10px;border-radius:6px;background:rgba(255,255,255,.25);margin:12px 0 6px}.pbar i{display:block;height:100%;border-radius:6px;background:#fff}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.tile{background:rgba(255,255,255,.2);border-radius:20px;padding:12px 6px;text-align:center}.tile b{display:block;font-size:19px;margin-top:4px}
+@media(max-width:820px){
+aside{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));border-radius:30px;padding:8px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+#nav button{border-radius:24px;color:var(--mu)}#nav button.on{background:var(--or);color:#fff}
+main{padding-bottom:120px}
+#sheet .sp{bottom:calc(86px + env(safe-area-inset-bottom,0px));border-radius:24px}#sheet .sp button.on{background:var(--or);color:#fff}
+#toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}}
 </style>
 </head>
 <body>
@@ -180,8 +206,12 @@ function mode(b,man){const r=b.closest('.mr');r.dataset.man=man;paint(r)}
 function paint(r){const man=r.dataset.man=='1';r.querySelector('.ms').style.display=man?'none':'';r.querySelector('.mn').style.display=r.querySelector('.mu2').style.display=man?'':'none';
  [['.mb0',!man],['.mb1',man]].forEach(([c,on])=>{const e=r.querySelector(c);e.style.background=on?'var(--or)':'#fff';e.style.color=on?'#fff':'var(--od)'})}
 function addMed(){$('#meds').insertAdjacentHTML('beforeend',medRow());paint($('#meds').lastElementChild)}
+function hero(){const d=days(),N=S.chicks||0;
+ if(!d.length)return '<div class="hero"><div class="sm">دورة جديدة 🐣</div><div class="big" style="font-size:28px">ابدأ باليوم صفر</div><div class="sm">اكتب عدد الكتاكيت وسجّل أول يوم من الفورم تحت</div></div>';
+ const dead=sum(d,e=>e.dead),alive=N-dead,L=d[d.length-1],feed=sum(d,e=>e.feed),w=[...d].reverse().find(e=>e.w),pct=N?Math.round(alive/N*100):0;
+ return `<div class="hero"><div class="sm">${esc(L.date)}</div><div style="font-size:22px;font-weight:800">يوم ${L.n} من الدورة 🐔</div><div class="big">${f0(alive)} <span style="font-size:18px;font-weight:500">فرخة حالياً</span></div><div class="pbar"><i style="width:${pct}%"></i></div><div class="sm">الحيّة ${pct}% من ${f0(N)} كتكوت</div><div class="tiles"><div class="tile"><span class="sm">نافق</span><b>${f0(dead)}</b></div><div class="tile"><span class="sm">علف (كجم)</span><b>${f0(feed)}</b></div><div class="tile"><span class="sm">آخر وزن (جم)</span><b>${w?f0(w.w):'—'}</b></div></div></div>`}
 function vDaily(){const d=days(),n=d.length?d[d.length-1].n+1:0;
-return `<div class="cols"><div class="card"><h2>تسجيل اليوم</h2><div class="g">
+return `${hero()}<div class="cols"><div class="card"><h2>تسجيل اليوم</h2><div class="g">
 <label>اليوم في الدورة<input id="fn" type="number" value="${n}"></label>
 <label>التاريخ<input id="fd" type="date" value="${today()}"></label>
 ${(S.chicks&&S.days.length)?'':`<label>عدد الكتاكيت<input id="fc" type="number" inputmode="numeric" value="${S.chicks||''}"></label>`}
