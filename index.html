@@ -153,7 +153,7 @@ const W=[44,62,81,102,125,151,181,213,249,288,330,376,425,477,533,592,655,720,78
 const C=[0,12,28,48,72,100,131,166,206,249,297,349,406,468,535,608,685,768,856,950,1050,1155,1266,1383,1505,1633,1767,1907,2051,2202,2357,2518,2684,2855,3031,3211,3396,3584,3777,3974,4175,4379,4586,4797,5010,5226];
 /* مواعيد التحصين إرشادية، اتبع برنامج الدكتور البيطري */
 const VAC=[[5,'هتشنر + IB'],[12,'جمبورو'],[18,'جمبورو (تقوية)'],[21,'لاسوتا (نيوكاسل)']];
-const SK=['days','meds','chicks','vp','fk','cfg','mp'],PK=['exp','sales','pays','price','feedPrice','daily','feedBuy','cycles','wk','wl','ph','rest'];
+const SK=['days','meds','chicks','vp','fk','cfg','mp','feedBuy'],PK=['exp','sales','pays','price','feedPrice','daily','cycles','wk','wl','ph','rest'];
 
 let S={days:[],meds:[],chicks:0,exp:[],sales:[],pays:[],price:0,feedPrice:0,daily:0,feedBuy:[],cycles:[],wk:[],wl:[],vp:null,fk:null,ph:{},cfg:{},mp:[],rest:[]};
 try{Object.assign(S,JSON.parse(localStorage.getItem('farm')||'{}'))}catch(e){}
@@ -173,14 +173,17 @@ async function save(){
  try{localStorage.setItem('farm',JSON.stringify(S))}catch(e){}
  if(!db)return;
  const pick=ks=>JSON.parse(JSON.stringify(Object.fromEntries(ks.map(k=>[k,S[k]===undefined?null:S[k]]))));
- try{await fs.setDoc(ref.sh,pick(SK),{merge:true});if(role=='owner')await fs.setDoc(ref.pr,pick(PK),{merge:true})}
+ try{await fs.setDoc(ref.sh,pick(SK),{merge:true});if(role=='owner')await fs.setDoc(ref.pr,{...pick(PK),feedBuy:fs.deleteField()},{merge:true})}
  catch(e){console.error(e);toast('مشكلة في الحفظ: '+(e.code||e.message),6000);return false}
  return true
 }
 const soft=()=>{const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName))return;render()};
 function listen(){
- const on=r=>fs.onSnapshot(r,s=>{if(s.metadata.hasPendingWrites||!s.exists())return;Object.assign(S,s.data());soft()});
- on(ref.sh);if(role=='owner')on(ref.pr);
+ let shReady=false,pendFB=null;
+ const key=x=>(x.d||'')+'|'+x.t+'|'+x.k;
+ const mig=()=>{if(!shReady||!pendFB)return;const old=pendFB;pendFB=null;S.feedBuy=S.feedBuy||[];const have=new Set(S.feedBuy.map(key));old.forEach(x=>{if(!have.has(key(x)))S.feedBuy.push(x)});save();soft()};
+ fs.onSnapshot(ref.sh,s=>{if(s.metadata.hasPendingWrites)return;shReady=true;if(s.exists())Object.assign(S,s.data());mig();soft()});
+ if(role=='owner')fs.onSnapshot(ref.pr,s=>{if(s.metadata.hasPendingWrites||!s.exists())return;const D={...s.data()};if(Array.isArray(D.feedBuy)){pendFB=D.feedBuy}delete D.feedBuy;Object.assign(S,D);mig();soft()});
 }
 async function boot(){
  if(!CLOUD){render();return}
@@ -477,9 +480,9 @@ function vStock(){const fl=feedLeft();
 return `<div class="cols"><div class="card"><h2>مخزن الأدوية</h2><div class="g"><label>اسم الدوا<input id="mn"></label><label>الكمية<input id="mq" type="number" step="any" inputmode="decimal"></label><label>الوحدة<select id="mu"><option>مل</option><option>جرام</option></select></label><label>تاريخ الشراء<input id="md" type="date" value="${today()}"></label></div><button class="pri" onclick="addStock()">إضافة للمخزن</button>
 ${S.meds.map((m,i)=>`<div class="li" style="flex-wrap:wrap"><span>${esc(m.name)} <small class="mu">${esc(m.d||'')}</small></span><b class="${m.left<=m.q0*.2?'bad':''}">${f0(m.left)} / ${f0(m.q0)} ${m.u}</b><button class="x" onclick="delStock(${i})">✕</button><div class="bar"><i style="width:${Math.max(0,m.left/m.q0*100)}%"></i></div></div>`).join('')}
 <p class="mu">الأحمر = باقي أقل من 20%. الكمية بتتخصم تلقائي من اليومية.</p></div>
-${role=='owner'?`<div class="card"><h2>رصيد العلف</h2><div class="g"><label>نوع العلف<select id="bt"><option value="b">بادي</option><option value="n">نامي</option><option value="a">ناهي</option></select></label><label>علف اشتريته (كجم)<input id="bk" type="number" step="any" inputmode="decimal"></label><label>التاريخ<input id="bd" type="date" value="${today()}"></label></div><button class="pri" onclick="addFeed()">إضافة علف</button>
+<div class="card"><h2>رصيد العلف</h2><div class="g"><label>نوع العلف<select id="bt"><option value="b">بادي</option><option value="n">نامي</option><option value="a">ناهي</option></select></label><label>علف اشتريته (كجم)<input id="bk" type="number" step="any" inputmode="decimal"></label><label>التاريخ<input id="bd" type="date" value="${today()}"></label></div><button class="pri" onclick="addFeed()">إضافة علف</button>
 ${S.feedBuy.map((x,i)=>`<div class="li"><span><small class="mu">${esc(x.d||'')}</small> شراء علف ${FT[x.t]||''}</span><b>${f0(x.k)} كجم</b><button class="x" onclick="delFeed(${i})">✕</button></div>`).join('')}
-${S.feedBuy.length?feedTbl():''}${fl?`<div class="big">باقي ${f0(fl.left)} كجم</div><p class="${fl.days<3?'bad':'mu'}">يكفي حوالي ${fl.days>=99?'—':fl.days.toFixed(1)} يوم على آخر استهلاك مسجل.</p>`:'<p class="mu">سجل العلف اللي اشتريته عشان يتحسب الباقي والأيام.</p>'}</div>`:''}</div>`}
+${S.feedBuy.length?feedTbl():''}${fl?`<div class="big">باقي ${f0(fl.left)} كجم</div><p class="${fl.days<3?'bad':'mu'}">يكفي حوالي ${fl.days>=99?'—':fl.days.toFixed(1)} يوم على آخر استهلاك مسجل.</p>`:'<p class="mu">سجل العلف اللي اشتريته عشان يتحسب الباقي والأيام.</p>'}</div></div>`}
 
 /* ---------- المساعد ---------- */
 function qa(t,c){if(c)CS=c;go(t)}
