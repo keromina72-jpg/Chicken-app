@@ -133,6 +133,7 @@ aside{border:0;box-shadow:-2px 0 18px rgba(9,77,68,.07)}
 .tk.p1{background:#fff1ee;border-color:var(--bad)}.tk.p2{background:#fff8e6;border-color:var(--ac)}
 .tk>div{flex:1;min-width:0}.tk b{display:block;font-size:14.5px}.tk small{color:var(--mu)}.tk .ic{font-size:22px}.tk .sec{margin:0;white-space:nowrap}
 @media(max-width:820px){aside{border-radius:22px 22px 0 0;box-shadow:0 -4px 20px rgba(9,77,68,.12)}#nav button.on{box-shadow:none}}
+#pnl{display:none}#pnl.show{display:block;position:fixed;inset:0;z-index:20;background:rgba(43,33,24,.45);overflow:auto;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px))}#pnl .pb{max-width:640px;margin:0 auto}#toast{z-index:30}
 </style>
 </head>
 <body>
@@ -141,6 +142,7 @@ aside{border:0;box-shadow:-2px 0 18px rgba(9,77,68,.07)}
 <main><div id="ph" class="ph"></div><div id="hd"></div><div id="view"></div></main>
 </div>
 <div id="sheet" onclick="if(event.target===this)toggleMore()"></div>
+<div id="pnl" onclick="if(event.target===this)closePn()"></div>
 <div id="toast"></div>
 <script>
 /* ===== إعداد Firebase: الصق apiKey و appId من موقع الخرفان (نفس المشروع) =====
@@ -209,7 +211,11 @@ async function doLogin(){try{await AU.signInWithEmailAndPassword(auth,$('#le').v
 function logout(){AU.signOut(auth)}
 
 /* ---------- الهيكل ---------- */
-function go(t){tab=t;render()}
+let PN='';
+function pnDraw(){const e=$('#pnl');if(!e)return;if(!PN){e.classList.remove('show');e.innerHTML='';document.body.style.overflow='';return}const y=e.scrollTop;document.body.style.overflow='hidden';e.classList.add('show');e.innerHTML=`<div class="pb"><div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="sec" style="margin:0" onclick="closePn()">✕ إغلاق</button></div>${PN=='weigh'?vWeigh():vProg()}</div>`;e.scrollTop=y}
+function openPn(k){PN=k;pnDraw();$('#pnl').scrollTop=0}
+function closePn(){PN='';pnDraw()}
+function go(t){PN='';tab=t;render()}
 function toggleMore(){$('#sheet').classList.toggle('show')}
 function render(){
  document.body.classList.remove('lo');
@@ -223,6 +229,7 @@ function render(){
  $('#view').innerHTML=({home:vHome,calc:vCalc,daily:vDaily,table:vTable,meds:vMeds,exp:vExp,wk:vWk,sales:vSales,stock:vStock,cycles:vCycles})[tab]();document.querySelectorAll('.mr').forEach(paint);
  $('#ph').innerHTML='🐔 مزرعة الفراخ — '+tabs.find(t=>t[0]==tab)[2]+' — '+today();
  scrollTo(0,0);
+ pnDraw();
 }
 
 /* ---------- التنبيهات ---------- */
@@ -525,9 +532,9 @@ function vHome(){const A=advice().sort((a,b)=>a.p-b.p),own=role=='owner',s=stats
  const kp=(l,v,c)=>`<div class="kp"><span>${l}</span><b class="${c||''}">${v}</b></div>`;
  const kps=s.d.length?`<div class="kps">${kp('نافق',s.mort.toFixed(1)+'%',s.mort>5?'bad':'')}${kp('FCR',s.fcr?s.fcr.toFixed(2):'—')}${kp('علف/فرخة',s.live>0?f0(s.feed*1000/s.live)+' جم':'—')}${own?kp('تكلفة الفرخة',S.chicks?(s.cost/S.chicks).toFixed(1):'—'):''}</div>`:'';
  const q=[['daily','📝','سجّل اليوم'],['calc','💧','ماء الدوا','water'],['calc','🌬️','التهوية','vent']].concat(own?[['sales','🧾','بيعة'],['exp','💰','مصروف']]:[]);
- const qs=`<div class="qa">${q.map(x=>`<button onclick="qa('${x[0]}','${x[3]||''}')"><b>${x[1]}</b>${x[2]}</button>`).join('')}</div>`;
+ const np=(S.mp||[]).filter(x=>!x.done).length,qs=`<div class="qa">${q.map(x=>`<button onclick="qa('${x[0]}','${x[3]||''}')"><b>${x[1]}</b>${x[2]}</button>`).join('')}<button onclick="openPn('weigh')"><b>⚖️</b>وزنة جديدة</button><button onclick="openPn('prog')"><b>💊</b>برنامج الأدوية${np?' ('+np+')':''}</button></div>`;
  const tk=G.map(([p,h])=>{const l=A.filter(x=>x.p==p);return l.length?`<div class="card"><h2>${h}</h2>${l.map(x=>`<div class="tk p${p}"><span class="ic">${x.ic}</span><div><b>${esc(x.t)}</b>${x.sb?`<small>${esc(x.sb)}</small>`:''}</div>${x.b?`<button class="sec" onclick="${x.act}">${x.b}</button>`:''}</div>`).join('')}</div>`:''}).join('')||'<div class="card"><p class="mu">كله تمام النهاردة ✅</p></div>';
- return hero()+kps+qs+vWeigh()+tk+vProg()+vVac()}
+ return hero()+kps+qs+tk+vVac()}
 /* ---------- برنامج الأدوية ومصاريف الفاضل ---------- */
 function feedRest(){const k=fkv(),N=S.chicks||0,tE=N*(k.b+k.n+k.a),tA=sum(S.days,e=>e.feed||0),fl=feedLeft(),need=Math.max(0,tE-tA-(fl?Math.max(0,fl.left):0));return{need,cost:need*num(S.feedPrice)/1000}}
 const restTotal=()=>sum(S.rest||[],x=>x.a)+feedRest().cost;
