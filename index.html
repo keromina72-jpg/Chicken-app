@@ -153,9 +153,9 @@ const W=[44,62,81,102,125,151,181,213,249,288,330,376,425,477,533,592,655,720,78
 const C=[0,12,28,48,72,100,131,166,206,249,297,349,406,468,535,608,685,768,856,950,1050,1155,1266,1383,1505,1633,1767,1907,2051,2202,2357,2518,2684,2855,3031,3211,3396,3584,3777,3974,4175,4379,4586,4797,5010,5226];
 /* مواعيد التحصين إرشادية، اتبع برنامج الدكتور البيطري */
 const VAC=[[5,'هتشنر + IB'],[12,'جمبورو'],[18,'جمبورو (تقوية)'],[21,'لاسوتا (نيوكاسل)']];
-const SK=['days','meds','chicks','vp','fk','cfg','mp','feedBuy'],PK=['exp','sales','pays','price','feedPrice','daily','cycles','wk','wl','ph','rest'];
+const SK=['days','meds','chicks','vp','fk','cfg','mp','feedBuy','wg'],PK=['exp','sales','pays','price','feedPrice','daily','cycles','wk','wl','ph','rest'];
 
-let S={days:[],meds:[],chicks:0,exp:[],sales:[],pays:[],price:0,feedPrice:0,daily:0,feedBuy:[],cycles:[],wk:[],wl:[],vp:null,fk:null,ph:{},cfg:{},mp:[],rest:[]};
+let S={days:[],wg:[],meds:[],chicks:0,exp:[],sales:[],pays:[],price:0,feedPrice:0,daily:0,feedBuy:[],cycles:[],wk:[],wl:[],vp:null,fk:null,ph:{},cfg:{},mp:[],rest:[]};
 try{Object.assign(S,JSON.parse(localStorage.getItem('farm')||'{}'))}catch(e){}
 let role='owner',tab='home',auth,AU,db,fs,ref={};
 
@@ -311,7 +311,7 @@ function feedBoxes(d,alive){
  const inp=(c,l)=>`<label>${l}<input type="number" step="any" inputmode="decimal" value="${pb[c]}" onchange="setFk('${['b','n','a'][c]}',this.value)"></label>`;
  const row3=`<div class="card noprint" style="padding:10px"><div class="mu" style="font-size:13px;margin-bottom:6px">كام كجم علف للفرخة من كل نوع (عدد الفراخ ${f0(N)})</div><div class="g" style="grid-template-columns:repeat(3,1fr)">${inp(0,'بادي (كجم/فرخة)')}${inp(1,'نامي (كجم/فرخة)')}${inp(2,'ناهي (كجم/فرخة)')}</div><small class="mu">العلف المسجل بيتحسب بالترتيب: بادي لحد ما يخلص حصته، وبعدها نامي، وبعدها ناهي. الشكارة 50 كجم.</small></div>`;
  return row1+row2+row3}
-function vTable(){const d=days();if(!d.length)return '<div class="card"><p class="mu">لسه مفيش تسجيلات. سجّل أول يوم من تبويب اليومية.</p></div>';
+function vTable(){const d=days();if(!d.length)return '<div class="card"><p class="mu">لسه مفيش تسجيلات. سجّل أول يوم من تبويب اليومية.</p></div>'+vWg();
  let dead=0,feed=0;const own=role=='owner';
  const rows=d.map(e=>{dead+=e.dead;feed+=e.feed;e.alive=S.chicks-dead;e.cf=feed;
   const g=e.feed*1000/e.alive,sd=e.n>=1&&e.n<=45?C[e.n]-C[e.n-1]:0,off=sd&&e.feed&&Math.abs(g-sd)/sd>.15;
@@ -321,9 +321,32 @@ function vTable(){const d=days();if(!d.length)return '<div class="card"><p class
  return `<div class="card"><h2>الجدول الكبير</h2><p class="mu">الأحمر في علف/فرخة = فرق أكتر من 15% عن الاستاندر، والأحمر في الحرارة = خارج المناسب. 📲 يبعت ملخص اليوم على واتساب</p>
 <div class="sc"><table><tr><th>يوم</th><th>تاريخ</th><th>علف كجم</th><th>علف/فرخة جم</th><th>نافق</th><th>متبقي</th><th>تحصين</th><th>وزن جم</th><th>حرارة°</th><th>رطوبة%</th><th></th></tr>${rows}</table></div></div>
 ${feedBoxes(d,S.chicks-dead)}
+<div class="card"><h2>المقارنة بجدول الاستاندر</h2>${cmp?`<div class="sc"><table><tr><th>يوم</th><th>وزنك</th><th>الاستاندر</th><th>الفرق</th><th>علف/فرخة (جم)</th><th>استاندر</th><th>FCR</th><th>FCR استاندر</th></tr>${cmp}</table></div><p class="mu">علف الفرخة وFCR تقريبيين من العلف المسجل وعدد الفراخ الحية.</p>`:'<p class="mu">سجل وزن في أي يوم عشان تظهر المقارنة.</p>'}</div>
+${vWg()}
 <div class="card"><h2>الوزن مقابل الاستاندر</h2>${chart(d)}</div>
-${tchart(d)}
-<div class="card"><h2>المقارنة بجدول الاستاندر</h2>${cmp?`<div class="sc"><table><tr><th>يوم</th><th>وزنك</th><th>الاستاندر</th><th>الفرق</th><th>علف/فرخة (جم)</th><th>استاندر</th><th>FCR</th><th>FCR استاندر</th></tr>${cmp}</table></div><p class="mu">علف الفرخة وFCR تقريبيين من العلف المسجل وعدد الفراخ الحية.</p>`:'<p class="mu">سجل وزن في أي يوم عشان تظهر المقارنة.</p>'}</div>`}
+${tchart(d)}`}
+
+/* ---------- سجل الوزنات ---------- */
+let WD={date:'',mode:'g',rows:[{c:'',w:''},{c:'',w:''}]};
+const wdSum=(rows,mode)=>{let c=0,t=0;rows.forEach(r=>{const n=num(r.c),w=num(r.w);if(n>0&&w>0){c+=n;t+=mode=='g'?w*1000:w*n}});return{c,avg:c?t/c:0}};
+function wInfo(date,avg){const st=vstart(),age=st==null||!date?null:Math.round((Date.parse(date)-st)/864e5),dd=days().filter(e=>e.date<=date),feed=sum(dd,e=>e.feed||0),dead=sum(dd,e=>e.dead||0),alive=(S.chicks||0)-dead,fcr=dd.length&&feed>0&&alive>0&&avg>0?feed/(alive*avg/1000):0,std=age!=null&&W[age]?W[age]:0;return{age,std,diff:std?avg-std:null,feed,alive,fcr}}
+function wdRes(){const r=wdSum(WD.rows,WD.mode);if(!r.c)return '<p class="mu">اكتب عدد الفراخ ووزنهم عشان يتحسب المتوسط.</p>';const I=wInfo(WD.date||today(),r.avg);
+ return rc(`متوسط الوزن (${f0(r.c)} فرخة)`,f0(r.avg)+' <small>جم</small>',`${I.age!=null?'يوم '+I.age+(I.std?` — الاستاندر ${I.std} جم (${I.diff>=0?'+':''}${f0(I.diff)})`:''):''}<br>معامل التحويل: <b>${I.fcr?I.fcr.toFixed(2):'—'}</b><br>📐 ${I.fcr?`الحساب: ${f0(I.feed)} كجم علف مسجل لحد التاريخ ده ÷ (${f0(I.alive)} فرخة حية × ${(r.avg/1000).toFixed(3)} كجم)`:'المعامل محتاج علف مسجل في اليومية لحد التاريخ ده'}<br>📐 المتوسط = ${WD.mode=='g'?'مجموع الأوزان':'مجموع (العدد × وزن الفرخة)'} ÷ ${f0(r.c)} فرخة`)}
+function wdUpd(){const o=document.getElementById('wd_res');if(o)o.innerHTML=wdRes()}
+function wdAdd(){WD.rows.push({c:'',w:''});render()}
+function wdSave(){const r=wdSum(WD.rows,WD.mode);if(!r.c)return toast('اكتب عدد الفراخ والوزن');const date=WD.date||today();
+ const rows=WD.rows.filter(x=>num(x.c)>0&&num(x.w)>0).map(x=>({c:num(x.c),w:num(x.w)}));
+ S.wg=S.wg||[];S.wg.push({id:String(Date.now()),date,mode:WD.mode,rows,n:r.c,avg:r.avg});
+ WD={date:'',mode:WD.mode,rows:[{c:'',w:''},{c:'',w:''}]};save();toast('اتسجلت الوزنة ✓');render()}
+function wgDel(id){if(!confirm('تمسح الوزنة دي؟'))return;S.wg=(S.wg||[]).filter(x=>x.id!=id);save();render()}
+function vWeigh(){if(!WD.date)WD.date=today();const m=WD.mode;
+ return `<div class="card"><h2>⚖️ وزنة جديدة</h2><div class="g"><label>التاريخ<input type="date" value="${WD.date}" onchange="WD.date=this.value;wdUpd()"></label><label>الوزن اللي هتكتبه<select onchange="WD.mode=this.value;render()"><option value="g"${m=='g'?' selected':''}>وزن المجموعة كلها (كجم)</option><option value="b"${m=='b'?' selected':''}>وزن الفرخة الواحدة (جم)</option></select></label></div>
+${WD.rows.map((r,i)=>`<div class="g" style="margin-top:6px"><label>عدد الفراخ<input type="number" inputmode="numeric" value="${r.c}" oninput="WD.rows[${i}].c=this.value;wdUpd()"></label><label>${m=='g'?'وزنهم (كجم)':'وزن الفرخة (جم)'}<input type="number" step="any" inputmode="decimal" value="${r.w}" oninput="WD.rows[${i}].w=this.value;wdUpd()"></label></div>`).join('')}
+<button class="sec" onclick="wdAdd()">+ مجموعة تانية</button><div id="wd_res" style="margin:8px 0">${wdRes()}</div><button class="pri" onclick="wdSave()">حفظ الوزنة</button></div>`}
+function vWg(){const L=(S.wg||[]).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(+a.id)-(+b.id));
+ const rows=L.map(x=>{const I=wInfo(x.date,x.avg),det=x.rows.map(r=>f0(r.c)+' فرخة '+(x.mode=='g'?num(r.w)+' كجم':num(r.w)+' جم')).join(' + ');
+  return `<tr><td>${esc(x.date)}</td><td>${I.age==null?'':I.age}</td><td>${f0(x.n)}</td><td style="white-space:normal"><b>${f0(x.avg)}</b><br><small class="mu">${esc(det)}</small></td><td>${I.std||''}</td><td class="${I.diff==null?'':I.diff>=0?'ok':'bad'}">${I.diff==null?'':(I.diff>0?'+':'')+f0(I.diff)}</td><td>${I.fcr?I.fcr.toFixed(2):'—'}</td><td><button class="x" onclick="wgDel('${x.id}')">✕</button></td></tr>`}).join('');
+ return `<div class="card"><h2>سجل الوزنات</h2>${L.length?`<div class="sc"><table><tr><th>تاريخ</th><th>يوم</th><th>اتوزن</th><th>متوسط (جم)</th><th>استاندر</th><th>الفرق</th><th>FCR</th><th></th></tr>${rows}</table></div><p class="mu">📐 FCR = العلف المسجل لحد تاريخ الوزنة ÷ (الفراخ الحية × متوسط الوزن بالكجم).</p>`:'<p class="mu">لسه مفيش وزنات. سجّل وزنة من المساعد.</p>'}</div>`}
 
 /* ---------- التحصينات ودرجة الحرارة وواتساب ---------- */
 const TR=[[3,32,35],[7,30,33],[14,27,30],[21,24,27],[28,21,25],[99,18,24]];
@@ -504,7 +527,7 @@ function vHome(){const A=advice().sort((a,b)=>a.p-b.p),own=role=='owner',s=stats
  const q=[['daily','📝','سجّل اليوم'],['calc','💧','ماء الدوا','water'],['calc','🌬️','التهوية','vent']].concat(own?[['sales','🧾','بيعة'],['exp','💰','مصروف']]:[]);
  const qs=`<div class="qa">${q.map(x=>`<button onclick="qa('${x[0]}','${x[3]||''}')"><b>${x[1]}</b>${x[2]}</button>`).join('')}</div>`;
  const tk=G.map(([p,h])=>{const l=A.filter(x=>x.p==p);return l.length?`<div class="card"><h2>${h}</h2>${l.map(x=>`<div class="tk p${p}"><span class="ic">${x.ic}</span><div><b>${esc(x.t)}</b>${x.sb?`<small>${esc(x.sb)}</small>`:''}</div>${x.b?`<button class="sec" onclick="${x.act}">${x.b}</button>`:''}</div>`).join('')}</div>`:''}).join('')||'<div class="card"><p class="mu">كله تمام النهاردة ✅</p></div>';
- return hero()+kps+qs+tk+vProg()+vVac()}
+ return hero()+kps+qs+vWeigh()+tk+vProg()+vVac()}
 /* ---------- برنامج الأدوية ومصاريف الفاضل ---------- */
 function feedRest(){const k=fkv(),N=S.chicks||0,tE=N*(k.b+k.n+k.a),tA=sum(S.days,e=>e.feed||0),fl=feedLeft(),need=Math.max(0,tE-tA-(fl?Math.max(0,fl.left):0));return{need,cost:need*num(S.feedPrice)/1000}}
 const restTotal=()=>sum(S.rest||[],x=>x.a)+feedRest().cost;
@@ -602,7 +625,7 @@ function closeCycle(){const d=days();if(!d.length)return toast('مفيش دور�
  S.wk.forEach(w=>{const bl=wBal(w.id);if(Math.abs(bl)>0.5)keep.push({w:w.id,t:'carry',a:bl,d:today(),n:'من '+nm})});
  backup();
  S.cycles.push({nm,from:d[0].date,to:d[d.length-1].date,ch:S.chicks,dead:st.dead,feed:st.feed,ex:st.cost,tk:st.sk,tm:st.rev,net:st.rev-st.cost,cb,sb:st.sb,age:st.age});
- S.days=[];S.exp=[];S.sales=[];S.pays=[];S.chicks=0;S.wl=keep;S.wk.forEach(w=>{if(w.auto)w.s=today()});{const keepF=fz.rows.filter(o=>o.left>0.5).map(o=>({k:o.left,t:o.c,d:today()})),rest=(fl?fl.left:0)-sum(keepF,x=>x.k);if(rest>0.5)keepF.push({k:rest,d:today()});S.feedBuy=keepF}
+ S.days=[];S.wg=[];S.exp=[];S.sales=[];S.pays=[];S.chicks=0;S.wl=keep;S.wk.forEach(w=>{if(w.auto)w.s=today()});{const keepF=fz.rows.filter(o=>o.left>0.5).map(o=>({k:o.left,t:o.c,d:today()})),rest=(fl?fl.left:0)-sum(keepF,x=>x.k);if(rest>0.5)keepF.push({k:rest,d:today()});S.feedBuy=keepF}
  save();toast('اتقفلت ✓ ونزلت نسخة احتياطية');render()}
 function bars(items,fmt){const n=items.length,vs=items.map(i=>i.v),mx=Math.max(0,...vs),mn=Math.min(0,...vs),rg=(mx-mn)||1,top=24,h=90,y0=top+mx/rg*h,bw=Math.min(44,240/n),st=280/n;
  let g=`<line x1="10" x2="290" y1="${y0}" y2="${y0}" stroke="#d9c7b5"/>`;
