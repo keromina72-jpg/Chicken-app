@@ -560,9 +560,10 @@ let CS='water';
 const gv=id=>num(document.getElementById(id).value),gs=id=>document.getElementById(id).value;
 function cs(k){CS=k;render()}
 function kw(){const d=days(),L=d[d.length-1]||{},age=L.n==null?7:L.n,dead=sum(d,e=>e.dead),lw=[...d].reverse().find(e=>e.w);return{age,n:Math.max(0,(S.chicks||0)-dead)||'',kg:+(((lw?lw.w:W[Math.min(age,45)])||500)/1000).toFixed(2),t:L.t||''}}
-const KEEP=/^c_(fa|ca|fb|cb|wn|ww|wh|tk|cy|hl|hw|hh|dr|k|ms|ml|ts|tl|f1|f2|vel|qtr|cs|bs|bm|iv|pv)$/;
+const KEEP=/^c_(fa|ca|fb|cb|wn|ww|wh|tk|cy|hl|hw|hh|dr|k|f1|f2|vel|qtr|cs|bs|bm|iv|pv)$/;
 let _ct;function cfgSave(id,v){S.cfg=S.cfg||{};S.cfg[id]=v;clearTimeout(_ct);_ct=setTimeout(save,700)}
-const fld=(id,l,v,p)=>{const k=KEEP.test(id),c=k&&S.cfg&&S.cfg[id]!==undefined?S.cfg[id]:v;return `<label>${l}<input id="${id}" type="number" step="any" inputmode="decimal" value="${c==null?'':c}" placeholder="${p||''}" oninput="${k?`cfgSave('${id}',this.value);`:''}calcRun()"></label>`};
+const SESS={};
+const fld=(id,l,v,p)=>{const k=KEEP.test(id),ss=id=='c_n'||id=='c_kg',c=ss&&SESS[id]!==undefined?SESS[id]:k&&S.cfg&&S.cfg[id]!==undefined?S.cfg[id]:v;return `<label>${l}<input id="${id}" type="number" step="any" inputmode="decimal" value="${c==null?'':c}" placeholder="${p||''}" oninput="${k?`cfgSave('${id}',this.value);`:''}${ss?`SESS['${id}']=this.value;`:''}calcRun()"></label>`};
 const sel=(id,l,o)=>{const c=S.cfg&&S.cfg[id];return `<label>${l}<select id="${id}" onchange="cfgSave('${id}',this.value);calcRun()">${o.map(x=>`<option value="${x[0]}"${String(c)==String(x[0])?' selected':''}>${x[1]}</option>`).join('')}</select></label>`};
 const rc=(t,b,sb,c)=>`<div class="card rc"><div class="mu">${t}</div><div class="big ${c||''}">${b}</div><small class="mu">${sb||''}</small></div>`;
 const WATER=[0,23,30,35,41,47,51,54,59,69,77,87,97,109,118,131,141,153,165,178,189,200,211,221,230,239,250,260,269,277,285,294,303,309,317,324,330,336,341,348,353,358,362,365,369,373,377,381,386,390,395,400];
@@ -584,20 +585,21 @@ const REG={d:['الدلتا والوجه البحري',6],s:['المناطق ا�
 const fx=(x,d)=>(+(+x).toFixed(d==null?1:d)).toLocaleString('en');
 const cvv=(id,d)=>{const e=document.getElementById(id);if(e)return e.value===''?d:num(e.value);const c=S.cfg&&S.cfg[id];return c!==undefined&&c!==''?num(c):d};
 const cvs=(id,d)=>{const e=document.getElementById(id);if(e)return e.value||d;const c=S.cfg&&S.cfg[id];return c!==undefined&&c!==''?c:d};
-const fac=(id,l,v,ph)=>{const c=S.cfg&&S.cfg[id]!==undefined?S.cfg[id]:v;return `<label>${l}<div style="display:flex;gap:6px"><button type="button" class="sec" style="margin:0;padding:0 16px;font-size:20px" onclick="stepF('${id}',-0.5)">−</button><input id="${id}" type="number" step="any" inputmode="decimal" value="${c==null?'':c}" placeholder="${ph||''}" oninput="cfgSave('${id}',this.value);calcRun()" style="text-align:center"><button type="button" class="sec" style="margin:0;padding:0 16px;font-size:20px" onclick="stepF('${id}',0.5)">+</button></div></label>`};
-function stepF(id,d){const e=document.getElementById(id),base=id=='c_f2'?REG[gs('c_rg')||'d'][1]:1.5;let v=num(e.value)||base;v=Math.max(0,+(v+d).toFixed(2));e.value=v;cfgSave(id,String(v));calcRun()}
+const fac=(id,l,v,ph,st)=>{st=st||0.5;return fac0(id,l,v,ph,st)};
+const fac0=(id,l,v,ph,st)=>{const c=S.cfg&&S.cfg[id]!==undefined?S.cfg[id]:v;return `<label>${l}<div style="display:flex;gap:6px"><button type="button" class="sec" style="margin:0;padding:0 16px;font-size:20px" onclick="stepF('${id}',-${st})">−</button><input id="${id}" type="number" step="any" inputmode="decimal" value="${c==null?'':c}" placeholder="${ph||''}" oninput="cfgSave('${id}',this.value);calcRun()" style="text-align:center"><button type="button" class="sec" style="margin:0;padding:0 16px;font-size:20px" onclick="stepF('${id}',${st})">+</button></div></label>`};
+function stepF(id,d){const e=document.getElementById(id),base=id=='c_f2'?REG[gs('c_rg')||'d'][1]:id=='c_f1'?1.5:0;let v=num(e.value)||base;v=Math.max(0,+(v+d).toFixed(2));e.value=v;cfgSave(id,String(v));calcRun()}
 function vCalc(){const k=kw(),m=CS,b=(t,id,e)=>`<button style="padding:10px 4px;font-size:13px" class="${m==id?'on':''}" onclick="cs('${id}')">${t}</button>`;
  const seg=`<div class="seg noprint">${b('💧 ماء الدوا','water')}${b('🌬️ التهوية','vent')}${b('🏠 العنبر والتبريد','barn')}</div>`;
  const dims=`${fld('c_hl','الطول (م)','')}${fld('c_hw','العرض (م)','')}${fld('c_hh','متوسط الارتفاع (م)','')}`;
  const form=m=='water'?`<div class="card"><h2>سقاية الدوا</h2><p class="mu">الأرقام متملية من مزرعتك، عدّل أي رقم.</p><div class="g">${fld('c_n','عدد الفراخ الحية',k.n)}${fld('c_a','العمر (يوم)',k.age)}${sel('c_h','مدة السقاية',[[4,'4 ساعات'],[8,'8 ساعات'],[12,'12 ساعة']])}${fld('c_d','جرعة الدوا لكل 100 لتر (جم أو مل)','')}${fld('c_tk','سعة التانك (لتر)','','مثلاً 1000')}</div></div>`
  :m=='barn'?`<div class="card"><h2>بيانات العنبر</h2><div class="g">${fld('c_n','عدد الطيور الحية (N)',k.n)}${fld('c_kg','متوسط وزن الطائر (كجم)',k.kg)}${dims}</div></div>
-<div class="card"><h2>كمية الهواء المستخدمة</h2><div class="g">${sel('c_bs','المصدر',[['tun','القصوى (التصميمية)'],['min','الدنيا'],['man','أدخلها بنفسي']])}${fld('c_bm','كمية الهواء يدوي (م³/ساعة)','')}</div><p class="mu">المعاملات (1.5 والمعامل الإقليمي وسرعة الهواء) بتتاخد من تبويب التهوية — عدّلها هناك.</p></div>
-<div class="card"><h2>المداخل وخلايا التبريد</h2><div class="g">${fld('c_iv','سرعة الهواء عند المدخل (م/ث)',4)}${fld('c_pv','سرعة الهواء على وجه الخلايا (م/ث)',1.5)}</div><p class="mu">الأرقام دي افتراضية وتتعدل: سرعة المدخل حسب تصميم العنبر والضغط الاستاتيكي، وسرعة الخلايا حسب مواصفات الشركة المصنعة.</p></div>`
+<div class="card"><h2>كمية الهواء المستخدمة</h2><div class="g">${sel('c_bs','المصدر',[['tun','القصوى (من تبويب التهوية)'],['min','الدنيا (من تبويب التهوية)'],['tr','الانتقالية (من تبويب التهوية)'],['fan','قدرة الشفاطات المركّبة'],['man','أدخلها بنفسي']])}${fld('c_bm','كمية الهواء يدوي (م³/ساعة) — لو اخترت «أدخلها بنفسي»','')}</div><p class="mu">المعاملات والشفاطات وسرعة الهواء بتتاخد من تبويب التهوية.</p></div>
+<div class="card"><h2>المداخل وخلايا التبريد (اختياري، عدّلهم)</h2><div class="g">${fld('c_iv','سرعة الهواء عند المدخل (م/ث)',4)}${fld('c_pv','سرعة الهواء على وجه الخلايا (م/ث)',1.5)}</div><p class="mu">الأرقام دي افتراضية وتتعدل: سرعة المدخل حسب تصميم العنبر والضغط الاستاتيكي، وسرعة الخلايا حسب مواصفات الشركة المصنعة.</p></div>`
  :`<div class="card"><h2>1. البيانات الأساسية</h2><div class="g">${fld('c_n','عدد الطيور الحية (N)',k.n)}${fld('c_kg','متوسط وزن الطائر (كجم)',k.kg)}${dims}${fld('c_dr','خصم كفاءة الشفاط % (ضغط التشغيل)',0)}${fld('c_cs','زمن دورة التشغيل (ثانية)',300)}</div>
 <h3>🌀 شفاط صغير</h3><div class="g">${fld('c_fa','العدد','')}${fld('c_ca','قدرة الواحد (م³/ساعة)','','مثلاً 18000')}</div>
 <h3>🌀 شفاط كبير</h3><div class="g">${fld('c_fb','العدد','')}${fld('c_cb','قدرة الواحد (م³/ساعة)','','مثلاً 42000')}</div></div>
-<div class="card"><h2>2. التهوية الدنيا</h2><div class="g">${fac('c_f1','معامل الهواء (م³/ساعة لكل كجم)',1.5)}${fld('c_ms','صغير مشغّل (عدد)',1)}${fld('c_ml','كبير مشغّل (عدد)',0)}</div></div>
-<div class="card"><h2>3. التهوية الانتقالية</h2><div class="g">${fld('c_qtr','كمية الهواء المطلوبة (م³/ساعة)','')}${fld('c_ts','صغير مشغّل (عدد)',0)}${fld('c_tl','كبير مشغّل (عدد)',1)}</div></div>
+<div class="card"><h2>2. التهوية الدنيا</h2><div class="g">${fac('c_f1','معامل الهواء (م³/ساعة لكل كجم)',1.5)}</div><p class="mu">أنا اللي بقولك تشغّل أنهي شفاط وقد إيه.</p></div>
+<div class="card"><h2>3. التهوية الانتقالية</h2><div class="g">${fac('c_qtr','كمية الهواء المطلوبة (م³/ساعة)','','اكتب الكمية',5000)}</div><p class="mu">بتحددها إنت حسب العنبر (المفروض بين الدنيا والقصوى). باقي المعطيات (الشفاطات وزمن الدورة والوزن) من البيانات الأساسية فوق.</p></div>
 <div class="card"><h2>4. التهوية القصوى</h2><div class="g">${sel('c_rg','المنطقة الجغرافية',Object.keys(REG).map(x=>[x,REG[x][0]+' ('+REG[x][1]+')']))}${fac('c_f2','المعامل (فاضي = معامل المنطقة)','','معامل المنطقة')}${fld('c_vel','سرعة الهواء المطلوبة (م/ث)',2.5)}</div></div>`;
  setTimeout(calcRun,0);
  return seg+`<div class="cols"><div>${form}</div><div id="cres"></div></div>`}
@@ -609,38 +611,53 @@ function calcWater(){const n=gv('c_n'),a=Math.round(gv('c_a')),h=+gs('c_h'),d=gv
  +(tk>0?rc('🛢️ التانكات',(win/tk).toFixed(2)+' <small>تانك</small>',`${fl} تانك كامل + ${f0(win-fl*tk)} لتر (سعة التانك ${f0(tk)} لتر)<br>📐 الحساب: ${f0(win)} لتر ÷ ${f0(tk)} لتر = ${(win/tk).toFixed(2)} تانك`):'')
  +(d>0?rc('كمية الدوا الكلية',+(win*d/100).toFixed(1)+' <small>جم أو مل</small>',`📐 الحساب: ${d} ÷ 100 × ${f0(win)} لتر = ${+(win*d/100).toFixed(1)}`+(tk>0?` — في التانك الكامل: ${+(tk*d/100).toFixed(1)}`:'')):'')
  +`<div class="card"><h3 style="margin-top:0">الأساس</h3><p class="mu">استهلاك المياه من جدول الاستهلاك القياسي لدجاج التسمين الأبيض: يوم ${a} = ${w.ml} مل/فرخة/يوم (من 23 مل يوم 1 لحد 400 مل يوم 51). بعدين ننسب لمدة السقاية (${h}/24). الاستهلاك بيختلف حسب الحالة الصحية وبيزيد في الصيف، فلو عندك عداد مياه اعتمد عليه.${a<1?"<br>يوم 0 في الجدول صفر، فبنستخدم قيمة يوم 1.":""}</p></div>`}
-function timerBox(Q,av,desc,T){if(!(av>0))return '<small class="mu">اكتب عدد وقدرة الشفاطات المشغّلة عشان أحسب زمن التشغيل.</small>';
- const duty=Q/av,d=Math.min(1,duty),on=Math.round(d*T),off=T-on;
- return `<div style="margin-top:8px"><b>نسبة التشغيل: ${fx(duty*100)}%</b> — شغّل <b>${on}</b> ثانية وافصل <b>${off}</b> ثانية كل ${T} ثانية<br><small class="mu">📐 المتاح = ${desc} = ${f0(av)} م³/س ← النسبة = ${f0(Q)} ÷ ${f0(av)} = ${fx(duty*100)}% ← تشغيل = ${fx(duty,3)} × ${T} = ${on} ث ← راحة = ${T} − ${on} = ${off} ث</small></div>`+(duty>1?`<div class="al w" style="margin-top:8px">⚠️ النسبة فوق 100%: زوّد الشفاطات المشغّلة (ناقص ${f0(Q-av)} م³/س).</div>`:'')}
+function fanPlan(Q,F,T){const a=F.map(f=>({l:f.l,c:f.c,n:f.n})).sort((x,y)=>x.c-y.c),cont={};let r=Q,tm=null,short=0,got=0;
+ for(let g=0;g<500&&r>1e-6;g++){const av=a.filter(f=>f.n>0);if(!av.length){short=r;break}
+  const f=av.find(x=>x.c>=r-1e-6);
+  if(f){f.n--;const d=r/f.c;if(d>=0.99){cont[f.l]=(cont[f.l]||0)+1;got+=f.c}else{const on=Math.round(d*T);tm={l:f.l,c:f.c,d,on};got+=f.c*d}r=0;break}
+  const L=av[av.length-1];L.n--;cont[L.l]=(cont[L.l]||0)+1;got+=L.c;r-=L.c}
+ return{cont,tm,short,got}}
+function planBox(Q,F,T){if(!F.length)return '<small class="mu">اكتب عدد وقدرة الشفاطات (صغير/كبير) في البيانات الأساسية.</small>';
+ const P=fanPlan(Q,F,T),cs=Object.keys(P.cont).map(l=>`${P.cont[l]} × ${l}`),L=[];
+ if(cs.length)L.push(`شغّل مستمر: <b>${cs.join(' + ')}</b>`);
+ if(P.tm)L.push(`شفاط ${P.tm.l} واحد بتايمر: يشتغل <b>${P.tm.on}</b> ثانية ويفصل <b>${T-P.tm.on}</b> ثانية كل ${T} ثانية (نسبة ${fx(P.tm.d*100)}%)`);
+ return `<div style="margin-top:8px">${L.join('<br>')||'—'}</div>`+(P.short>0?`<div class="al w" style="margin-top:8px">⚠️ الشفاطات ناقصها ${f0(P.short)} م³/س من المطلوب.</div>`:'')+`<small class="mu" style="display:block;margin-top:6px">📐 بنشغّل شفاطات كبيرة مستمرة لحد ما يتبقى أقل من قدرة شفاط، وبعدين أصغر شفاط يكفي الباقي يشتغل بتايمر: التشغيل = (الباقي ÷ قدرة الشفاط) × ${T} ثانية، والراحة = ${T} − التشغيل. الناتج الفعلي ≈ ${f0(P.got)} م³/س</small>`}
 function calcVent(){const n=gv('c_n'),kg=gv('c_kg'),B=gv('c_hw'),H=gv('c_hh'),dr=Math.min(40,gv('c_dr')||0),k=1-dr/100,cS=gv('c_ca')*k,cL=gv('c_cb')*k,nS=gv('c_fa'),nL=gv('c_fb'),T=Math.max(1,Math.round(gv('c_cs')||300));
  if(!n||!kg)return '<div class="card"><p class="mu">اكتب عدد الطيور ومتوسط الوزن.</p></div>';
- const BW=n*kg,dn=dr?` (بعد خصم ${dr}%)`:'';
- const av=(s,l)=>s*cS+l*cL,ds=(s,l)=>[s>0?`${s} × ${f0(cS)}`:'',l>0?`${l} × ${f0(cL)}`:''].filter(Boolean).join(' + ')||'0';
+ const BW=n*kg,dn=dr?` (بعد خصم ${dr}%)`:'',F=[{l:'صغير',n:nS,c:cS},{l:'كبير',n:nL,c:cL}].filter(f=>f.n>0&&f.c>0);
+ const ds=(s,l)=>[s>0?`${s} × ${f0(cS)}`:'',l>0?`${l} × ${f0(cL)}`:''].filter(Boolean).join(' + ')||'0';
+ const f1=cvv('c_f1',1.5),Qmin=BW*f1,rg=cvs('c_rg','d'),fr=REG[rg][1],f2=cvv('c_f2',0)>0?cvv('c_f2',0):fr,Qmax=BW*f2,A=B*H,vel=gv('c_vel'),Qv=A>0&&vel>0?A*vel*3600:0,Qd=Math.max(Qmax,Qv);
  let out=rc('⚖️ الوزن الحي الإجمالي',f0(BW)+' <small>كجم</small>',`📐 ${f0(n)} × ${kg} = ${f0(BW)} كجم`);
- const f1=cvv('c_f1',1.5),Qmin=BW*f1,ms=gv('c_ms'),ml=gv('c_ml');
- out+=`<div class="card rc"><div class="mu">🌬️ التهوية الدنيا</div><div class="big">${f0(Qmin)} <small>م³/ساعة</small></div><small class="mu">📐 Q_min = ${f0(n)} × ${kg} × ${f1} = ${f0(Qmin)}</small>${timerBox(Qmin,av(ms,ml),ds(ms,ml)+dn,T)}</div>`;
- const Qtr=gv('c_qtr'),ts=gv('c_ts'),tl=gv('c_tl');
- out+=Qtr>0?`<div class="card rc"><div class="mu">↗️ التهوية الانتقالية</div><div class="big">${f0(Qtr)} <small>م³/ساعة</small></div><small class="mu">📐 ${fx(Qtr/BW,2)} م³/ساعة لكل كجم</small>${timerBox(Qtr,av(ts,tl),ds(ts,tl)+dn,T)}</div>`:'<div class="card rc"><div class="mu">↗️ التهوية الانتقالية</div><p class="mu" style="margin:6px 0">اكتب كمية الهواء المطلوبة حسب ظروف العنبر وأنا أحسب نسبة التشغيل.</p></div>';
- const rg=cvs('c_rg','d'),fr=REG[rg][1],f2=cvv('c_f2',0)>0?cvv('c_f2',0):fr,Qmax=BW*f2,A=B*H,vel=gv('c_vel'),Qv=A>0&&vel>0?A*vel*3600:0,Qd=Math.max(Qmax,Qv);
+ out+=`<div class="card rc"><div class="mu">🌬️ التهوية الدنيا</div><div class="big">${f0(Qmin)} <small>م³/ساعة</small></div><small class="mu">📐 Q_min = ${f0(n)} × ${kg} × ${f1} = ${f0(Qmin)}${dn}</small>${planBox(Qmin,F,T)}</div>`;
+ const Qtr=gv('c_qtr');
+ out+=Qtr>0?`<div class="card rc"><div class="mu">↗️ التهوية الانتقالية</div><div class="big">${f0(Qtr)} <small>م³/ساعة</small></div><small class="mu">📐 يساوي ${fx(Qtr/BW,2)} م³/ساعة لكل كجم</small>${planBox(Qtr,F,T)}${Qtr<Qmin?`<div class="al w" style="margin-top:8px">⚠️ أقل من الحد الأدنى (${f0(Qmin)}).</div>`:''}${Qtr>Qd?`<div class="al w" style="margin-top:8px">⚠️ أكبر من القصوى (${f0(Qd)}) — الأنسب تشغّل قصوى.</div>`:''}</div>`:`<div class="card rc"><div class="mu">↗️ التهوية الانتقالية</div><p class="mu" style="margin:6px 0">اكتب كمية الهواء المطلوبة (بين ${f0(Qmin)} و ${f0(Qd)} م³/ساعة) وأنا أقولك تشغّل أنهي شفاط وقد إيه.</p></div>`;
  let t=`<div class="card rc"><div class="mu">🌪️ التهوية القصوى</div><div class="big">${f0(Qd)} <small>م³/ساعة</small></div>
 <small class="mu">📐 بالوزن الحي: ${f0(n)} × ${kg} × ${f2} = ${f0(Qmax)} (المعامل ${gv('c_f2')>0?'اليدوي':'الإقليمي'} ${f2})${Qv?`<br>📐 بسرعة الهواء: ${fx(A,1)} م² × ${vel} م/ث × 3600 = ${f0(Qv)}`:`<br>اكتب العرض والارتفاع وسرعة الهواء لحساب الطريقة التانية.`}<br>التصميمي = الأكبر من الاثنين</small>`;
  const alt=[cS>0?`<b>${Math.ceil(Qd/cS-1e-9)}</b> × صغير`:'',cL>0?`<b>${Math.ceil(Qd/cL-1e-9)}</b> × كبير`:''].filter(Boolean);
  t+=alt.length?`<p style="margin:10px 0 4px">عدد الشفاطات المطلوب (لو نوع واحد): ${alt.join(' — أو — ')}<br><small class="mu">📐 ${f0(Qd)} ÷ قدرة الشفاط${dn} ← تقريب لأعلى</small></p>`:'<small class="mu">اكتب قدرة الشفاط الصغير أو الكبير لحساب العدد.</small>';
- const Qi=av(nS,nL);
+ const Qi=nS*cS+nL*cL;
  if(Qi>0){const ok=Qi>=Qd;t+=`<p class="${ok?'ok':'bad'}" style="margin:4px 0">${ok?'✅':'⚠️'} شفاطاتك (${ds(nS,nL)}) = ${f0(Qi)} م³/س ${ok?'(كفاية)':'(ناقص '+f0(Qd-Qi)+' م³/س)'}<br><small class="mu">معدل الهواء الفعلي ${fx(Qi/BW,2)} م³/س لكل كجم${A>0?' — سرعة الهواء '+fx(Qi/3600/A,2)+' م/ث':''}</small></p>`}
  out+=t+'</div>';
- return out+`<details class="card"><summary><b>طريقة الحساب</b></summary><p class="mu">• الحد الأدنى = العدد × الوزن × المعامل (1.5 افتراضي، وتزوده وتنقصه بالأزرار).<br>• المتاح = (عدد الصغير المشغّل × قدرته) + (عدد الكبير المشغّل × قدرته). نسبة التشغيل = المطلوب ÷ المتاح، وزمن التشغيل = النسبة × زمن الدورة، والراحة = الباقي. لازم النسبة متعدّيش 100%.<br>• الانتقالية: الكمية بتحددها إنت بدون معامل ثابت.<br>• القصوى: المعامل الإقليمي (دلتا 6 – صحراوي 7 – صعيد 8) أو معاملك اليدوي، ويتقارن مع حساب سرعة الهواء ويتاخد الأكبر.<br>• راجع الناتج بضغط التشغيل الفعلي للشفاطات (خانة خصم الكفاءة).</p></details>`}
-function airSrc(BW){const s=cvs('c_bs','tun');if(s=='man')return{q:cvv('c_bm',0),t:'يدوي'};const B=gv('c_hw'),H=gv('c_hh');if(s=='min')return{q:BW*cvv('c_f1',1.5),t:'الدنيا'};const fr=REG[cvs('c_rg','d')][1],f2=cvv('c_f2',0)>0?cvv('c_f2',0):fr,v=cvv('c_vel',2.5);return{q:Math.max(BW*f2,B>0&&H>0?B*H*v*3600:0),t:'القصوى'}}
-function calcBarn(){const n=gv('c_n'),kg=gv('c_kg'),L=gv('c_hl'),B=gv('c_hw'),H=gv('c_hh'),BW=n*kg,V=L*B*H,FA=L*B,XA=B*H,iv=gv('c_iv'),pv=gv('c_pv'),S0=airSrc(BW),Q=S0.q;let out='';
- if(V>0)out+=rc('📦 حجم العنبر',f0(V)+' <small>م³</small>',`📐 ${L} × ${B} × ${H}`);
- else out+='<div class="card"><p class="mu">اكتب الطول والعرض والارتفاع.</p></div>';
- if(FA>0&&BW>0)out+=rc('🐔 كثافة الطيور',fx(BW/FA,1)+' <small>كجم/م²</small>',`📐 ${f0(BW)} كجم ÷ ${f0(FA)} م² (مساحة الأرضية) — ${fx(n/FA,1)} طائر/م²`);
- if(!(Q>0))return out+'<div class="card"><p class="mu">اكتب كمية الهواء (أو اختار مصدرها) وأنا أحسب باقي الأرقام.</p></div>';
- out+=`<div class="card"><div class="mu">كمية الهواء المستخدمة (${S0.t})</div><div class="big">${f0(Q)} <small>م³/ساعة</small></div></div>`;
- if(V>0){out+=rc('🔁 معدل تغيير الهواء',fx(Q/V,1)+' <small>مرة/ساعة</small>',`📐 ${f0(Q)} ÷ ${f0(V)}`);out+=rc('⏱️ زمن تغيير الهواء',f0(V/Q*3600)+' <small>ثانية</small>',`📐 (${f0(V)} ÷ ${f0(Q)}) × 3600`)}
- if(XA>0)out+=rc('💨 سرعة الهواء داخل العنبر',fx(Q/(3600*XA),2)+' <small>م/ث</small>',`📐 ${f0(Q)} ÷ (3600 × ${fx(XA,1)} م² مقطع)`);
- if(iv>0)out+=rc('🚪 مساحة فتحات دخول الهواء',fx(Q/(3600*iv),1)+' <small>م²</small>',`📐 ${f0(Q)} ÷ (3600 × ${iv} م/ث)`);
- if(pv>0)out+=rc('🧊 مساحة خلايا التبريد',fx(Q/(3600*pv),1)+' <small>م²</small>',`📐 ${f0(Q)} ÷ (3600 × ${pv} م/ث على وجه الخلايا)`);
+ return out+`<details class="card"><summary><b>طريقة الحساب</b></summary><p class="mu">• الحد الأدنى = العدد × الوزن × المعامل (1.5 افتراضي، وتزوده وتنقصه بالأزرار).<br>• الدنيا والانتقالية: الشفاطات بتتوزع تلقائي من شفاطاتك (صغير وكبير) ونسبة التشغيل = المطلوب ÷ قدرة الشفاط اللي بتايمر، والتشغيل = النسبة × زمن الدورة، والراحة = الباقي.<br>• الانتقالية: الكمية بتحددها إنت بدون معامل ثابت.<br>• القصوى: المعامل الإقليمي (دلتا 6 – صحراوي 7 – صعيد 8) أو معاملك اليدوي، ويتقارن مع حساب سرعة الهواء ويتاخد الأكبر.<br>• راجع الناتج بضغط التشغيل الفعلي للشفاطات (خانة خصم الكفاءة).</p></details>`}
+function airSrc(BW){const s=cvs('c_bs','tun'),B=gv('c_hw'),H=gv('c_hh');
+ if(s=='man')return{q:cvv('c_bm',0),t:'يدوي',m:['كمية الهواء اليدوي']};
+ if(s=='tr')return{q:cvv('c_qtr',0),t:'الانتقالية',m:['كمية الهواء الانتقالية (في تبويب التهوية)']};
+ if(s=='fan'){const k=1-Math.min(40,cvv('c_dr',0))/100;return{q:(cvv('c_fa',0)*cvv('c_ca',0)+cvv('c_fb',0)*cvv('c_cb',0))*k,t:'الشفاطات المركّبة',m:['عدد وقدرة الشفاطات (في تبويب التهوية)']}}
+ if(s=='min')return{q:BW*cvv('c_f1',1.5),t:'الدنيا',m:['عدد الطيور','متوسط الوزن']};
+ const fr=REG[cvs('c_rg','d')][1],f2=cvv('c_f2',0)>0?cvv('c_f2',0):fr,v=cvv('c_vel',2.5);return{q:Math.max(BW*f2,B>0&&H>0?B*H*v*3600:0),t:'القصوى',m:['عدد الطيور','متوسط الوزن']}}
+function calcBarn(){const n=gv('c_n'),kg=gv('c_kg'),L=gv('c_hl'),B=gv('c_hw'),H=gv('c_hh'),BW=n*kg,V=L*B*H,FA=L*B,XA=B*H,iv=gv('c_iv'),pv=gv('c_pv'),S0=airSrc(BW),Q=S0.q;
+ const ms=(t,a)=>`<div class="card rc"><div class="mu">${t}</div><p class="mu" style="margin:6px 0">⏳ محتاج: ${a.join('، ')}</p></div>`,
+ miss=(c)=>c.filter(x=>!x[0]).map(x=>x[1]);
+ let out='';
+ {const m=miss([[L,'الطول'],[B,'العرض'],[H,'الارتفاع']]);out+=m.length?ms('📦 حجم العنبر',m):rc('📦 حجم العنبر',f0(V)+' <small>م³</small>',`📐 ${L} × ${B} × ${H}`)}
+ {const m=miss([[n,'عدد الطيور'],[kg,'متوسط الوزن'],[L,'الطول'],[B,'العرض']]);out+=m.length?ms('🐔 كثافة الطيور',m):rc('🐔 كثافة الطيور',fx(BW/FA,1)+' <small>كجم/م²</small>',`📐 ${f0(BW)} كجم ÷ ${f0(FA)} م² (مساحة الأرضية) — ${fx(n/FA,1)} طائر/م²`)}
+ out+=Q>0?`<div class="card"><div class="mu">كمية الهواء المستخدمة (${S0.t})</div><div class="big">${f0(Q)} <small>م³/ساعة</small></div>${BW>0?`<small class="mu">${fx(Q/BW,2)} م³/ساعة لكل كجم</small>`:''}</div>`:ms('كمية الهواء المستخدمة ('+S0.t+')',S0.m);
+ const A=Q>0?[]:['كمية الهواء'];
+ {const m=A.concat(miss([[L,'الطول'],[B,'العرض'],[H,'الارتفاع']]));out+=m.length?ms('🔁 معدل تغيير الهواء',m):rc('🔁 معدل تغيير الهواء',fx(Q/V,1)+' <small>مرة/ساعة</small>',`📐 ${f0(Q)} ÷ ${f0(V)}`)}
+ {const m=A.concat(miss([[L,'الطول'],[B,'العرض'],[H,'الارتفاع']]));out+=m.length?ms('⏱️ زمن تغيير الهواء',m):rc('⏱️ زمن تغيير الهواء',f0(V/Q*3600)+' <small>ثانية</small>',`📐 (${f0(V)} ÷ ${f0(Q)}) × 3600`)}
+ {const m=A.concat(miss([[B,'العرض'],[H,'الارتفاع']]));out+=m.length?ms('💨 سرعة الهواء داخل العنبر',m):rc('💨 سرعة الهواء داخل العنبر',fx(Q/(3600*XA),2)+' <small>م/ث</small>',`📐 ${f0(Q)} ÷ (3600 × ${fx(XA,1)} م² مقطع)`)}
+ {const m=A.concat(miss([[iv,'سرعة الهواء عند المدخل']]));out+=m.length?ms('🚪 مساحة فتحات دخول الهواء',m):rc('🚪 مساحة فتحات دخول الهواء',fx(Q/(3600*iv),1)+' <small>م²</small>',`📐 ${f0(Q)} ÷ (3600 × ${iv} م/ث)`)}
+ {const m=A.concat(miss([[pv,'سرعة الهواء على وجه الخلايا']]));out+=m.length?ms('🧊 مساحة خلايا التبريد',m):rc('🧊 مساحة خلايا التبريد',fx(Q/(3600*pv),1)+' <small>م²</small>',`📐 ${f0(Q)} ÷ (3600 × ${pv} م/ث على وجه الخلايا)`)}
  return out}
 const ventMeth=(mt)=>`<div class="card"><h2>الحد الأدنى بكل طريقة</h2><div class="sc"><table><tr><th>الطريقة</th><th>م³/س</th><th>لكل كجم</th></tr>${mt}</table></div><p class="mu">الطرق بتختلف. المستخدمة مظلّلة، وبتغيرها من خانة «طريقة الحد الأدنى». طريقة الحجم محتاجة أبعاد العنبر.</p></div>`;
 function ventTable(n,su,cy,F,m,vol,mins){const rows=[1,4,7,10,14,17,21,24,28,31,35,38,42,45].map(a=>{const kg=W[a]/1000,fd=dayFeed(n,a),A=airNeed(n,kg,a,su,m,vol,fd,mins),P=plan(A.q,su,cy,F,0);return `<tr><td>${a}</td><td>${f0(W[a])}</td><td>${f0(fd)}</td><td>${f0(A.q)}</td><td style="white-space:normal;text-align:right">${planTxt(P)}${P.short>0?' ⚠️':''}</td></tr>`}).join('');
