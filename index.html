@@ -171,35 +171,47 @@ const totExp=()=>sum(S.exp,x=>x.a)+laborDue();
 let _tt;function toast(t,ms){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(_tt);_tt=setTimeout(()=>e.style.display='none',ms||2200)}
 
 /* ---------- الحفظ والمزامنة ---------- */
+let SYNC={},_big=false,_fbd=false,OFFLINE=false;
+const jk=k=>JSON.stringify(S[k]===undefined?null:S[k]);
 async function save(){
  try{localStorage.setItem('farm',JSON.stringify(S))}catch(e){}
+ if(OFFLINE){toast('📴 أوفلاين — التعديل ده مش هيتحفظ على السيرفر. ارجع للنت وكرره.',5000);return false}
  if(!db)return;
+ if(!_big){const n=JSON.stringify(S).length;if(n>700000){_big=true;toast('⚠️ حجم البيانات كبير ('+Math.round(n/1024)+' ك) وقرّب يوصل لحد Firebase. اقفل الدورة وخد نسخة احتياطية.',9000)}}
  const pick=ks=>JSON.parse(JSON.stringify(Object.fromEntries(ks.map(k=>[k,S[k]===undefined?null:S[k]]))));
- try{await fs.setDoc(ref.sh,pick(SK),{merge:true});if(role=='owner')await fs.setDoc(ref.pr,{...pick(PK),feedBuy:fs.deleteField()},{merge:true})}
- catch(e){console.error(e);toast('مشكلة في الحفظ: '+(e.code||e.message),6000);return false}
+ const ds=SK.filter(k=>jk(k)!==SYNC[k]),dp=role=='owner'?PK.filter(k=>jk(k)!==SYNC[k]):[],sent={};
+ [...ds,...dp].forEach(k=>sent[k]=jk(k));
+ try{
+  if(ds.length)await fs.setDoc(ref.sh,pick(ds),{merge:true});
+  if(role=='owner'&&(dp.length||!_fbd)){await fs.setDoc(ref.pr,{...pick(dp),feedBuy:fs.deleteField()},{merge:true});_fbd=true}
+  Object.assign(SYNC,sent);
+ }catch(e){console.error(e);toast('مشكلة في الحفظ: '+(e.code||e.message),6000);return false}
  return true
 }
-const soft=()=>{const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName))return;render()};
+const soft=()=>{const a=document.activeElement;if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))return;render()};
 function listen(){
  let shReady=false,pendFB=null;
  const key=x=>(x.d||'')+'|'+x.t+'|'+x.k;
  const mig=()=>{if(!shReady||!pendFB)return;const old=pendFB;pendFB=null;S.feedBuy=S.feedBuy||[];const have=new Set(S.feedBuy.map(key));old.forEach(x=>{if(!have.has(key(x)))S.feedBuy.push(x)});save();soft()};
- fs.onSnapshot(ref.sh,s=>{if(s.metadata.hasPendingWrites)return;shReady=true;if(s.exists())Object.assign(S,s.data());mig();soft()});
- if(role=='owner')fs.onSnapshot(ref.pr,s=>{if(s.metadata.hasPendingWrites||!s.exists())return;const D={...s.data()};if(Array.isArray(D.feedBuy)){pendFB=D.feedBuy}delete D.feedBuy;Object.assign(S,D);mig();soft()});
+ /* لو عندك تعديل لسه ماتحفظش على قسم معين، التحديث القادم من السيرفر مايمسحوش */
+ const apply=d=>{for(const k of Object.keys(d)){if(SYNC[k]!==undefined&&jk(k)!==SYNC[k])continue;S[k]=d[k];SYNC[k]=jk(k)}};
+ fs.onSnapshot(ref.sh,s=>{if(s.metadata.hasPendingWrites)return;shReady=true;if(s.exists())apply(s.data());mig();soft()});
+ if(role=='owner')fs.onSnapshot(ref.pr,s=>{if(s.metadata.hasPendingWrites||!s.exists())return;const D={...s.data()};if(Array.isArray(D.feedBuy)){pendFB=D.feedBuy}delete D.feedBuy;apply(D);mig();soft()});
 }
 async function boot(){
  if(!CLOUD){render();return}
  const B='https://www.gstatic.com/firebasejs/10.14.1/';
- let a,au,f;try{[a,au,f]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')])}catch(e){return offline()}
+ let a,au,f;try{[a,au,f]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')])}catch(e){return offlineLocal()}
  const app=a.initializeApp(FB);AU=au;fs=f;auth=au.getAuth(app);db=f.getFirestore(app);
  ref.sh=f.doc(db,'poultry','shared');ref.pr=f.doc(db,'poultry','private');
  au.onAuthStateChanged(auth,async u=>{
   if(!u)return login();
-  try{const r=await f.getDoc(f.doc(db,'users',u.uid));if(!r.exists())return login('الحساب ده لسه متفعّلش، كلم المالك');role=r.data().role=='owner'?'owner':'worker'}
+  try{const r=await f.getDoc(f.doc(db,'users',u.uid));if(!r.exists())return login('الحساب ده لسه متفعّلش، كلم المالك');role=r.data().role=='owner'?'owner':'worker';try{localStorage.setItem('farmRole',role)}catch(e){}}
   catch(e){return login('مشكلة في الصلاحيات')}
   listen();render();
  });
 }
+function offlineLocal(){let r=null,has=false;try{r=localStorage.getItem('farmRole');has=!!localStorage.getItem('farm')}catch(e){}if(!r||!has)return offline();OFFLINE=true;role=r;addEventListener('online',()=>location.reload());document.body.insertAdjacentHTML('beforeend','<div id="offb" style="position:fixed;top:0;left:0;right:0;z-index:99;background:#b45309;color:#fff;text-align:center;font-weight:700;padding:6px;font-size:13px">📴 أوفلاين — دي آخر نسخة محفوظة على الجهاز (اطّلاع بس، التعديل مش هيتحفظ)</div>');render()}
 function offline(){document.body.classList.add('lo');$('#view').innerHTML=`<div class="card" style="max-width:380px;margin:40px auto"><h2>📡 مفيش اتصال</h2><p class="mu">الموقع محتاج نت عشان يفتح بياناتك ويحفظ. اتأكد من الاتصال وجرّب تاني.</p><button class="pri" onclick="location.reload()">إعادة المحاولة</button></div>`}
 function login(msg){
  document.body.classList.add('lo');
@@ -208,7 +220,7 @@ function login(msg){
  <div class="card"><h2>تسجيل الدخول</h2>${msg?`<p class="bad" style="margin:0 0 8px">${msg}</p>`:''}<label>الإيميل<input id="le" type="email" autocomplete="username" inputmode="email" placeholder="example@mail.com" style="direction:ltr;text-align:right"></label><label style="margin-top:10px">الرقم السري<input id="lp" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" style="direction:ltr;text-align:right"></label><button class="pri" onclick="doLogin()">دخول 🐣</button></div>
  <p class="mu" style="text-align:center;font-size:13px">🐥 مزرعة الفراخ</p></div>`}
 async function doLogin(){try{await AU.signInWithEmailAndPassword(auth,$('#le').value.trim(),$('#lp').value)}catch(e){toast('الإيميل أو الرقم السري غلط')}}
-function logout(){AU.signOut(auth)}
+function logout(){try{localStorage.removeItem('farmRole')}catch(e){}AU.signOut(auth)}
 
 /* ---------- الهيكل ---------- */
 let PN='';
@@ -217,7 +229,9 @@ function openPn(k){PN=k;pnDraw();$('#pnl').scrollTop=0}
 function closePn(){PN='';pnDraw()}
 function go(t){PN='';tab=t;render()}
 function toggleMore(){$('#sheet').classList.toggle('show')}
+let _lt=null;
 function render(){
+ const _y=window.scrollY,_same=_lt===tab,_ae=document.activeElement,_id=_ae&&_ae.id&&/INPUT|TEXTAREA|SELECT/.test(_ae.tagName)?_ae.id:null,_ss=_id&&_ae.type!='number'&&_ae.type!='date'?[_ae.selectionStart,_ae.selectionEnd]:null;
  document.body.classList.remove('lo');
  const own=role=='owner';
  const tabs=[['home','🏠','المساعد'],['daily','📝','تسجيل اليوم'],['calc','🧮','الحاسبات'],['table','📊','المتابعة'],['stock','📦','المخزن'],['meds','🧪','سجل الأدوية']].concat(own?[['exp','💰','المصاريف'],['wk','👷','العاملين'],['sales','🧾','المبيعات'],['cycles','📈','التقارير']]:[]);
@@ -228,8 +242,9 @@ function render(){
  $('#hd').innerHTML=`<h1>${tabs.find(t=>t[0]==tab)[2]}</h1><div><span class="pill">${CLOUD?(own?'مالك':'مهندس'):'وضع تجريبي (محلي)'}</span>${CLOUD?' <button class="sec" style="margin:0" onclick="logout()">خروج</button>':''}</div>`;
  $('#view').innerHTML=({home:vHome,calc:vCalc,daily:vDaily,table:vTable,meds:vMeds,exp:vExp,wk:vWk,sales:vSales,stock:vStock,cycles:vCycles})[tab]();document.querySelectorAll('.mr').forEach(paint);
  $('#ph').innerHTML='🐔 مزرعة الفراخ — '+tabs.find(t=>t[0]==tab)[2]+' — '+today();
- scrollTo(0,0);
  pnDraw();
+ if(_same){scrollTo(0,_y);if(_id){const n=document.getElementById(_id);if(n){try{n.focus({preventScroll:true});if(_ss)n.setSelectionRange(_ss[0],_ss[1])}catch(e){}}}}else scrollTo(0,0);
+ _lt=tab;
 }
 
 /* ---------- التنبيهات ---------- */
@@ -239,7 +254,7 @@ function alerts(){
  A.push(['i',`يوم ${cur}: العلف المناسب (${cur<=10?'بادئ':cur<=24?'نامي':'ناهي'}) — إرشادي حسب شركة العلف`]);
  if(cur==11||cur==25)A.push(['w',`النهاردة غيّر العلف لـ${cur==11?'نامي':'ناهي'}`]);
  if(cur==10||cur==24)A.push(['i',`بكرة تغيير العلف لـ${cur==10?'نامي':'ناهي'}`]);
- vplan().forEach(p=>{if(doneOf(p))return;const x=p.d-cur;if(x==0)A.push(['w','تحصين النهاردة: '+p.n]);else if(x>0&&x<=2)A.push(['i',`تحصين ${p.n} بعد ${x} يوم`]);else if(x<0&&x>=-3)A.push(['w',`تحصين ${p.n} فات ميعاده (يوم ${p.d}) — لو اتعمل علّم عليه تم`])});
+ vplan().forEach(p=>{if(doneOf(p))return;const x=p.d-cur;if(x==0)A.push(['w','تحصين النهاردة: '+esc(p.n)]);else if(x>0&&x<=2)A.push(['i',`تحصين ${esc(p.n)} بعد ${x} يوم`]);else if(x<0&&x>=-3)A.push(['w',`تحصين ${esc(p.n)} فات ميعاده (يوم ${p.d}) — لو اتعمل علّم عليه تم`])});
  if(L&&S.chicks){
   const td=sum(d,e=>e.dead),alive=S.chicks-td,pv=d.slice(0,-1),av=pv.length?sum(pv,e=>e.dead)/pv.length:0,r=L.dead/(alive+L.dead);
   if(L.dead>0&&(r>.003||(L.dead>=3&&L.dead>2*av)))A.push(['w',`نافق يوم ${L.n} مرتفع: ${L.dead} (${(r*100).toFixed(2)}%) — شوف السبب`]);
@@ -679,6 +694,14 @@ return `${vRep()}${vBreak(1)}
 ${vCmp()}`}
 
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+let _ut;
+function undoable(fn){const before={};for(const k in S)before[k]=JSON.stringify(S[k]);fn();const old={};for(const k in S)if(before[k]!==undefined&&JSON.stringify(S[k])!==before[k])old[k]=JSON.parse(before[k]);if(!Object.keys(old).length)return;
+ let b=document.getElementById('undob');if(!b){b=document.createElement('div');b.id='undob';b.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));max-width:420px;margin:auto;background:#1f2937;color:#fff;border-radius:14px;padding:10px 14px;z-index:90;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.35)';document.body.append(b)}
+ b.innerHTML='<span>اتحذف</span><button style="background:#0f766e;color:#fff;border-radius:10px;padding:8px 14px;font-weight:700">↩️ تراجع</button>';b.style.display='flex';
+ b.querySelector('button').onclick=()=>{Object.assign(S,old);save();render();b.style.display='none'};
+ clearTimeout(_ut);_ut=setTimeout(()=>b.style.display='none',9000)}
+['delDay','delExp','delSale','delPay','delWl','delStock','delFeed','restDel','mpDel','vDel','delWorker','wgDel'].forEach(n=>{const o=window[n];if(typeof o!='function')return;window[n]=(...a)=>undoable(()=>o(...a))});
+
 boot();
 </script>
 </body>
