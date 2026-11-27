@@ -244,8 +244,8 @@ function logout(){try{localStorage.removeItem('farmRole')}catch(e){}AU.signOut(a
 /* ---------- الهيكل ---------- */
 let PN='';
 function pnDraw(){const e=$('#pnl');if(!e)return;if(!PN){e.classList.remove('show');e.innerHTML='';document.body.style.overflow='';return}const y=e.scrollTop;document.body.style.overflow='hidden';e.classList.add('show');e.innerHTML=`<div class="pb"><div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="sec" style="margin:0" onclick="closePn()">✕ إغلاق</button></div>${PN=='weigh'?vWeigh():vProg()}</div>`;e.scrollTop=y}
-function openPn(k){PN=k;pnDraw();$('#pnl').scrollTop=0}
-function closePn(){PN='';pnDraw()}
+function openPn(k){if(k=='weigh'&&!WD.edit&&!WD.date)WD=wdNew(WD.mode);PN=k;pnDraw();$('#pnl').scrollTop=0}
+function closePn(){if(PN=='weigh'&&WD.edit)WD=wdNew(WD.mode);PN='';pnDraw()}
 function go(t){PN='';tab=t;render()}
 function toggleMore(){$('#sheet').classList.toggle('show')}
 let _lt=null;
@@ -323,6 +323,14 @@ function saveDay(){const n=parseInt($('#fn').value);if(isNaN(n)||n<0)return toas
  rm(n);S.days.push({n,date:$('#fd').value||today(),feed:num($('#ff').value),dead:num($('#fx').value),w:num($('#fw').value),t:num($('#ft').value)||null,h:num($('#fh').value)||null,v:$('#fv').value.trim(),meds});
  {const vv=$('#fv').value.trim();if(vv){const pl=vplan(),it=pl.find(x=>!x.done&&(vv.includes(x.n)||x.n.includes(vv)));if(it){it.done=$('#fd').value||today();S.vp=pl}}}
  save().then(ok=>{if(ok!==false){toast('تم الحفظ ✓');go('home')}})}
+function editDay(n){const e=S.days.find(x=>x.n==n);if(!e)return;
+ zf('تعديل يوم '+e.n,[['n','اليوم في الدورة','number',e.n],['d','التاريخ','date',e.date],['f','العلف (كجم)','number',e.feed||''],['x','النافق','number',e.dead||''],['w','متوسط الوزن (جم)','number',e.w||''],['t','حرارة العنبر (°م)','number',e.t||''],['h','الرطوبة (%)','number',e.h||''],['v','التحصين','text',e.v||'']],o=>{
+  const nn=parseInt(o.n);if(isNaN(nn)||nn<0){toast('اكتب رقم اليوم');return false}
+  if(nn!=e.n&&S.days.some(x=>x.n==nn)){toast('يوم '+nn+' متسجل قبل كده');return false}
+  e.n=nn;e.date=o.d||e.date;e.feed=num(o.f);e.dead=num(o.x);e.w=num(o.w);e.t=num(o.t)||null;e.h=num(o.h)||null;
+  const vv=o.v.trim();e.v=vv;
+  if(vv){const pl=vplan(),it=pl.find(x=>!x.done&&(vv.includes(x.n)||x.n.includes(vv)));if(it){it.done=e.date;S.vp=pl}}
+  save();render();toast('اتعدل ✓')},'حفظ التعديل')}
 function delDay(n){rm(n);save();render()}
 
 /* ---------- الجدول والرسم والمقارنة ---------- */
@@ -335,8 +343,19 @@ function vMeds(){const R={};days().forEach(e=>{if(e.meds&&e.meds.length)R[e.n]={
  const d=Object.values(R).sort((a,b)=>a.n-b.n);
  if(!d.length)return '<div class="card"><p class="mu">لسه مفيش أدوية متسجلة. بتضيفها من اليومية أو من برنامج الأدوية في المساعد.</p></div>';
  const cell=(e,w)=>e.meds.filter(a=>String(a.w||1)==w).map(a=>`<div>${esc(a.name)} <small class="mu">${qf(a.q)} ${esc(a.u||'')}${a.l?' — '+f0(a.l)+' لتر':''}</small></div>`).join('');
- const rows=d.map(e=>`<tr><td>${e.n}</td><td>${esc(e.date)}</td><td style="white-space:normal">${cell(e,'1')}</td><td style="white-space:normal">${cell(e,'2')}</td><td style="white-space:normal">${cell(e,'3')}</td></tr>`).join('');
- return `<div class="card"><h2>سجل الأدوية</h2><div class="sc"><table><tr><th>يوم</th><th>تاريخ</th><th>سقوة 1</th><th>سقوة 2</th><th>سقوة 3</th></tr>${rows}</table></div></div>`}
+ const rows=d.map(e=>`<tr><td>${e.n}</td><td>${esc(e.date)}</td><td style="white-space:normal">${cell(e,'1')}</td><td style="white-space:normal">${cell(e,'2')}</td><td style="white-space:normal">${cell(e,'3')}</td><td><button class="x" style="color:#0f766e" onclick="medEdit(${e.n})">✏️</button><button class="x" onclick="medDel(${e.n})">✕</button></td></tr>`).join('');
+ return `<div class="card"><h2>سجل الأدوية</h2><div class="sc"><table><tr><th>يوم</th><th>تاريخ</th><th>سقوة 1</th><th>سقوة 2</th><th>سقوة 3</th><th></th></tr>${rows}</table></div></div>`}
+function medItems(n){const d=S.days.find(x=>x.n==n),L=[];if(d)(d.meds||[]).forEach(a=>L.push({o:a,s:'d'}));(S.mp||[]).filter(x=>x.done&&x.d==n).forEach(x=>L.push({o:x,s:'m'}));return L}
+function medEdit(n){const L=medItems(n);if(!L.length)return;const F=[];
+ L.forEach((it,i)=>{F.push(['q'+i,esc(it.o.name)+' — الكمية ('+esc(it.o.u||'')+') — صفر = مسح','number',it.o.q],['w'+i,'السقوة','select',String(it.o.w||1),[['1','سقوة 1'],['2','سقوة 2'],['3','سقوة 3']]])});
+ zf('تعديل أدوية يوم '+n,F,o=>{const d=S.days.find(x=>x.n==n);
+  L.forEach((it,i)=>{const a=it.o,nq=num(o['q'+i]);
+   if(it.s=='d'){const m=a.id!=null?S.meds.find(x=>x.id==a.id):null;if(m)m.left=Math.max(0,+(m.left+a.q-Math.max(0,nq)).toFixed(4));
+    if(nq<=0)d.meds=d.meds.filter(x=>x!==a);else{a.q=nq;a.w=o['w'+i]}}
+   else{if(nq<=0)S.mp=S.mp.filter(x=>x!==a);else{a.q=nq;a.w=o['w'+i]}}});
+  save();render();toast('اتعدل ✓')},'حفظ التعديل')}
+function medDel(n){const d=S.days.find(x=>x.n==n);if(d){(d.meds||[]).forEach(a=>{const m=a.id!=null?S.meds.find(x=>x.id==a.id):null;if(m)m.left=+(m.left+a.q).toFixed(4)});d.meds=[]}
+ S.mp=(S.mp||[]).filter(x=>!(x.done&&x.d==n));save();render()}
 function fkv(){return Object.assign({b:.3,n:1.2,a:2.7},S.fk||{})}
 function setFk(k,v){S.fk=Object.assign({},S.fk||{},{[k]:num(v)});save();render()}
 const FT={b:'بادي',n:'نامي',a:'ناهي'};
@@ -364,7 +383,7 @@ function vTable(){const d=days();if(!d.length)return '<div class="card"><p class
  let B='';
  if(TS=='days'){
   const rows=[...R].reverse().map(e=>{const g=e.feed*1000/e.alive,sd=e.n>=1&&e.n<=45?C[e.n]-C[e.n-1]:0,off=sd&&e.feed&&Math.abs(g-sd)/sd>.15,tb=e.t&&(e.t<trange(e.n)[0]-1||e.t>trange(e.n)[1]+1);
-   return `<tr><td><b>${e.n}</b><small class="mu" style="display:block">${esc((e.date||'').slice(5))}</small></td><td>${e.feed?f0(e.feed):'—'}</td><td class="${off?'bad':''}">${e.feed?f0(g):'—'}</td><td class="${e.dead?'bad':''}">${e.dead||'—'}</td><td>${f0(e.alive)}</td><td>${e.w||'—'}</td><td class="${tb?'bad':''}">${e.t?e.t+'°':'—'}</td><td>${e.h?e.h+'%':'—'}</td><td class="vt">${esc(e.v||'—')}</td><td><button class="x" style="color:#2e8b57" onclick="shareDay(${e.n})">📲</button>${own?`<button class="x" onclick="delDay(${e.n})">✕</button>`:''}</td></tr>`}).join('');
+   return `<tr><td><b>${e.n}</b><small class="mu" style="display:block">${esc((e.date||'').slice(5))}</small></td><td>${e.feed?f0(e.feed):'—'}</td><td class="${off?'bad':''}">${e.feed?f0(g):'—'}</td><td class="${e.dead?'bad':''}">${e.dead||'—'}</td><td>${f0(e.alive)}</td><td>${e.w||'—'}</td><td class="${tb?'bad':''}">${e.t?e.t+'°':'—'}</td><td>${e.h?e.h+'%':'—'}</td><td class="vt">${esc(e.v||'—')}</td><td><button class="x" style="color:#2e8b57" onclick="shareDay(${e.n})">📲</button><button class="x" style="color:#0f766e" onclick="editDay(${e.n})">✏️</button>${own?`<button class="x" onclick="delDay(${e.n})">✕</button>`:''}</td></tr>`}).join('');
   B=`<div class="card" style="padding:8px"><div class="sc"><table class="tb dt"><tr><th>يوم</th><th>علف كجم</th><th>جم/فرخة</th><th>نافق</th><th>متبقي</th><th>وزن جم</th><th>حرارة</th><th>رطوبة</th><th>تحصين</th><th></th></tr>${rows}</table></div></div><p class="mu">الأحمر في جم/فرخة = فرق أكتر من 15% عن الاستاندر، والأحمر في الحرارة = خارج المناسب. 📲 يبعت ملخص اليوم على واتساب.</p>`}
  else if(TS=='std'){const cmp=d.filter(e=>e.w&&W[e.n]).map(e=>{const df=e.w-W[e.n],pc=df/W[e.n]*100,fb=e.cf*1000/e.alive,fa=fb/e.w,fs_=C[e.n]/W[e.n];
    return `<tr><td>${e.n}</td><td>${e.w}</td><td>${W[e.n]}</td><td class="${df>=0?'ok':'bad'}">${df>0?'+':''}${f0(df)} <small>(${pc.toFixed(1)}%)</small></td><td class="${fa<=fs_?'ok':'bad'}">${fa.toFixed(2)} <small class="mu">/ ${fs_.toFixed(2)}</small></td></tr>`}).join('');
@@ -374,7 +393,8 @@ function vTable(){const d=days();if(!d.length)return '<div class="card"><p class
  return K+sg+B}
 
 /* ---------- سجل الوزنات ---------- */
-let WD={date:'',mode:'g',rows:[{c:'',w:''},{c:'',w:''}]};
+let WD={date:'',mode:'g',rows:[{c:'',w:''},{c:'',w:''}],edit:null},WOPEN=null;
+const wdNew=m=>({date:'',mode:m||'g',rows:[{c:'',w:''},{c:'',w:''}],edit:null});
 const wdSum=(rows,mode)=>{let c=0,t=0;rows.forEach(r=>{const n=num(r.c),w=num(r.w);if(n>0&&w>0){c+=n;t+=mode=='g'?w*1000:w*n}});return{c,avg:c?t/c:0}};
 function wInfo(date,avg){const st=vstart(),age=st==null||!date?null:Math.round((Date.parse(date)-st)/864e5),dd=days().filter(e=>e.date<=date),feed=sum(dd,e=>e.feed||0),dead=sum(dd,e=>e.dead||0),alive=(S.chicks||0)-dead,fcr=dd.length&&feed>0&&alive>0&&avg>0?feed/(alive*avg/1000):0,std=age!=null&&W[age]?W[age]:0;return{age,std,diff:std?avg-std:null,feed,alive,fcr}}
 function wdRes(){const r=wdSum(WD.rows,WD.mode);if(!r.c)return '<p class="mu">اكتب عدد الفراخ ووزنهم عشان يتحسب المتوسط.</p>';const I=wInfo(WD.date||today(),r.avg);
@@ -383,18 +403,23 @@ function wdUpd(){const o=document.getElementById('wd_res');if(o)o.innerHTML=wdRe
 function wdAdd(){WD.rows.push({c:'',w:''});render()}
 function wdSave(){const r=wdSum(WD.rows,WD.mode);if(!r.c)return toast('اكتب عدد الفراخ والوزن');const date=WD.date||today();
  const rows=WD.rows.filter(x=>num(x.c)>0&&num(x.w)>0).map(x=>({c:num(x.c),w:num(x.w)}));
- S.wg=S.wg||[];S.wg.push({id:String(Date.now()),date,mode:WD.mode,rows,n:r.c,avg:r.avg});
- WD={date:'',mode:WD.mode,rows:[{c:'',w:''},{c:'',w:''}]};save();toast('اتسجلت الوزنة ✓');render()}
+ const rec={date,mode:WD.mode,rows,n:r.c,avg:r.avg},ed=WD.edit;S.wg=S.wg||[];
+ const x=ed?S.wg.find(y=>y.id==ed):null;
+ if(x)Object.assign(x,rec);else S.wg.push({id:String(Date.now()),...rec});
+ WD=wdNew(WD.mode);if(ed)PN='';save();toast(ed?'اتعدلت الوزنة ✓':'اتسجلت الوزنة ✓');render()}
+function wgEdit(id){const x=(S.wg||[]).find(y=>y.id==id);if(!x)return;WD={date:x.date,mode:x.mode,rows:x.rows.map(r=>({c:r.c,w:r.w})),edit:id};openPn('weigh')}
+function wgOpen(id){WOPEN=WOPEN==id?null:id;render()}
 function wgDel(id){if(!confirm('تمسح الوزنة دي؟'))return;S.wg=(S.wg||[]).filter(x=>x.id!=id);save();render()}
 function vWeigh(){if(!WD.date)WD.date=today();const m=WD.mode;
- return `<div class="card"><h2>⚖️ وزنة جديدة</h2><div class="g"><label>التاريخ<input type="date" value="${WD.date}" onchange="WD.date=this.value;wdUpd()"></label><label>الوزن اللي هتكتبه<select onchange="WD.mode=this.value;render()"><option value="g"${m=='g'?' selected':''}>وزن المجموعة كلها (كجم)</option><option value="b"${m=='b'?' selected':''}>وزن الفرخة الواحدة (جم)</option></select></label></div>
+ return `<div class="card"><h2>⚖️ ${WD.edit?'تعديل الوزنة':'وزنة جديدة'}</h2><div class="g"><label>التاريخ<input type="date" value="${WD.date}" onchange="WD.date=this.value;wdUpd()"></label><label>الوزن اللي هتكتبه<select onchange="WD.mode=this.value;render()"><option value="g"${m=='g'?' selected':''}>وزن المجموعة كلها (كجم)</option><option value="b"${m=='b'?' selected':''}>وزن الفرخة الواحدة (جم)</option></select></label></div>
 ${WD.rows.map((r,i)=>`<div class="g" style="margin-top:6px"><label>عدد الفراخ<input type="number" inputmode="numeric" value="${r.c}" oninput="WD.rows[${i}].c=this.value;wdUpd()"></label><label>${m=='g'?'وزنهم (كجم)':'وزن الفرخة (جم)'}<input type="number" step="any" inputmode="decimal" value="${r.w}" oninput="WD.rows[${i}].w=this.value;wdUpd()"></label></div>`).join('')}
-<button class="sec" onclick="wdAdd()">+ مجموعة تانية</button><div id="wd_res" style="margin:8px 0">${wdRes()}</div><button class="pri" onclick="wdSave()">حفظ الوزنة</button></div>`}
-function vWg(){const L=(S.wg||[]).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(+a.id)-(+b.id));
- const rows=L.map(x=>{const I=wInfo(x.date,x.avg),det=x.rows.map(r=>f0(r.c)+' فرخة '+(x.mode=='g'?num(r.w)+' كجم':num(r.w)+' جم')).join(' + ');
-  return `<tr><td>${esc(x.date)}</td><td>${I.age==null?'':I.age}</td><td>${f0(x.n)}</td><td style="white-space:normal"><b>${f0(x.avg)}</b><br><small class="mu">${esc(det)}</small></td><td>${I.std||''}</td><td class="${I.diff==null?'':I.diff>=0?'ok':'bad'}">${I.diff==null?'':(I.diff>0?'+':'')+f0(I.diff)}</td><td>${I.fcr?I.fcr.toFixed(2):'—'}</td><td><button class="x" onclick="wgDel('${x.id}')">✕</button></td></tr>`}).join('');
- return `<div class="card"><h2>سجل الوزنات</h2>${L.length?`<div class="sc"><table><tr><th>تاريخ</th><th>يوم</th><th>اتوزن</th><th>متوسط (جم)</th><th>استاندر</th><th>الفرق</th><th>FCR</th><th></th></tr>${rows}</table></div><p class="mu">📐 FCR = العلف المسجل لحد تاريخ الوزنة ÷ (الفراخ الحية × متوسط الوزن بالكجم).</p>`:'<p class="mu">لسه مفيش وزنات. سجّل وزنة من المساعد.</p>'}</div>`}
-
+<button class="sec" onclick="wdAdd()">+ مجموعة تانية</button><div id="wd_res" style="margin:8px 0">${wdRes()}</div><button class="pri" onclick="wdSave()">${WD.edit?'حفظ التعديل':'حفظ الوزنة'}</button></div>`}
+function vWg(){const L=(S.wg||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(+b.id)-(+a.id));
+ const rows=L.map(x=>{const I=wInfo(x.date,x.avg),op=WOPEN==x.id,det=x.rows.map(r=>f0(r.c)+' فرخة × '+num(r.w)+(x.mode=='g'?' كجم':' جم')).join('<br>');
+  let r=`<tr onclick="wgOpen('${x.id}')" style="cursor:pointer"><td>${esc(x.date)}</td><td>${I.age==null?'—':I.age}</td><td><b>${f0(x.avg)}</b> جم</td><td class="mu">${op?'▲':'▼'}</td></tr>`;
+  if(op)r+=`<tr><td colspan="4" style="white-space:normal;text-align:right;background:var(--ol);padding:12px"><div><b>اتوزن:</b> ${f0(x.n)} فرخة</div><div style="margin:4px 0"><b>الأوزان:</b><br>${det}</div>${I.std?`<div><b>الاستاندر:</b> ${I.std} جم — <span class="${I.diff>=0?'ok':'bad'}">${I.diff>0?'+':''}${f0(I.diff)} جم</span></div>`:''}<div><b>معامل التحويل FCR:</b> ${I.fcr?I.fcr.toFixed(2):'—'}</div><small class="mu">FCR = العلف المسجل لحد التاريخ ده ÷ (الفراخ الحية × متوسط الوزن بالكجم)</small><div style="margin-top:8px"><button class="sec" style="margin:0 0 0 6px" onclick="wgEdit('${x.id}')">✏️ تعديل</button><button class="sec" style="margin:0;color:var(--bad);border-color:var(--bad)" onclick="wgDel('${x.id}')">🗑 حذف</button></div></td></tr>`;
+  return r}).join('');
+ return `<div class="card"><h2>سجل الوزنات</h2>${L.length?`<div class="sc"><table><tr><th>تاريخ</th><th>يوم</th><th>المتوسط</th><th></th></tr>${rows}</table></div><p class="mu">دوس على أي وزنة تشوف تفاصيلها وتعدّلها.</p>`:'<p class="mu">لسه مفيش وزنات. سجّل وزنة من المساعد.</p>'}</div>`}
 /* ---------- التحصينات ودرجة الحرارة وواتساب ---------- */
 const TR=[[3,32,35],[7,30,33],[14,27,30],[21,24,27],[28,21,25],[99,18,24]];
 function trange(n){const r=TR.find(x=>n<=x[0]);return [r[1],r[2]]}
@@ -467,8 +492,11 @@ function wLog(id,ty){const w=S.wk.find(x=>x.id==id),lv=ty=='off';if(!w)return;zf
 function wRet(id){const x=S.wl.find(y=>y.w==id&&y.t=='off'&&y.fr&&!y.ret&&!y.to);if(x)zf('رجع من الإجازة امتى؟',[['ret','تاريخ الرجوع','date',today()]],o=>{x.ret=o.ret||today();save();render()},'تسجيل الرجوع')}
 function wSet(id){const w=S.wk.find(x=>x.id==id);if(!w)return;let st=0;zf('تصفية حساب '+w.n,[['e','تاريخ التصفية','date',today()],['n','ملاحظات','text']],(o,fm)=>{const e=o.e||today(),c=wkcalc(w,e);if(!st){st=1;fm.querySelector('h2').insertAdjacentHTML('afterend',`<p>أيام الشغل ${c.worked} · استحقاقه ${f0(c.earned)} · مسحوبات ${f0(c.adv)} · قبضها ${f0(c.paid)}<br><b>${c.net>=0?'المتبقي له':'عليه للمزرعة'}: ${f0(Math.abs(c.net))}</b></p>`);fm.querySelector('.pri').textContent='✅ تأكيد التصفية';return false}w.st='صفي';w.e=e;w.wn=(o.n||'').trim();w.fin={tot:c.tot,lv:c.lv,worked:c.worked,earned:c.earned,adv:c.adv,paid:c.paid,net:c.net};save();WS='old';render();toast('اتصفى ✅ واتنقل للأرشيف')},'عرض الحساب')}
 const wph=p=>{p=String(p||'').replace(/\D/g,'');return p.startsWith('0')?'20'+p.slice(1):p};
-function wShare(id){const w=S.wk.find(x=>x.id==id);if(!w)return;const c=w.st=='صفي'&&w.fin?w.fin:wkcalc(w),L=wlogs(w).filter(x=>x.t=='adv'||x.t=='paid'||x.t=='pay').sort((a,b)=>String(a.d).localeCompare(String(b.d)));
- const tx=['👷 كشف حساب: '+w.n,'من '+(w.s||'—')+' لحد '+(w.e||today()),'أيام الشغل: '+c.worked+(c.lv?' (إجازة '+c.lv+' يوم)':''),'المرتب الشهري: '+f0(wsal(w)),'الاستحقاق: '+f0(c.earned),''].concat(L.map(x=>'• '+(x.t=='pay'?'قبض مرتب':(x.k||'مسحوب'))+' '+(x.d||'')+': '+f0(x.a)),['','إجمالي المسحوب: '+f0(c.adv),'مرتبات قبضها: '+f0(c.paid),(c.net>=0?'المتبقي له: ':'عليه للمزرعة: ')+f0(Math.abs(c.net))]).join('\n');wa(tx,wph(w.ph))}
+function wShare(id){const w=S.wk.find(x=>x.id==id);if(!w)return;const c=w.st=='صفي'&&w.fin?w.fin:wkcalc(w);
+ const tx=['👷 كشف حساب: '+w.n,'من '+(w.s||'—')+' لحد '+(w.e||today()),'أيام الشغل: '+c.worked+(c.lv?' (إجازة '+c.lv+' يوم)':''),'المرتب الشهري: '+f0(wsal(w)),'الاستحقاق: '+f0(c.earned),'','إجمالي المسحوب: '+f0(c.adv),'مرتبات قبضها: '+f0(c.paid),(c.net>=0?'المتبقي له: ':'عليه للمزرعة: ')+f0(Math.abs(c.net))].join('\n');wa(tx,wph(w.ph))}
+function wShareAll(){const A=S.wk.filter(w=>w.st!='صفي');if(!A.length)return toast('مفيش عمال');
+ const L=['👷 كشف العمال — '+today(),''];A.forEach(w=>{const c=wkcalc(w);L.push('• '+w.n+': مسحوب '+f0(c.adv)+' — '+(c.net>=0?'المتبقي له ':'عليه ')+f0(Math.abs(c.net)))});
+ L.push('','إجمالي المسحوب: '+f0(sum(A,w=>wkcalc(w).adv)));wa(L.join('\n'))}
 function delWl(id){S.wl=S.wl.filter(x=>x._i!=id);save();render()}
 function delWorker(id){if(!confirm('تحذف العامل وكل سجله؟'))return;S.wk=S.wk.filter(w=>w.id!=id);S.wl=S.wl.filter(x=>x.w!=id);save();render()}
 function wcard(w){const old=w.st=='صفي',c=old&&w.fin?w.fin:wkcalc(w),L=wlogs(w).slice().sort((a,b)=>String(b.d||'').localeCompare(String(a.d||''))),ic={adv:'💸',paid:'💸',pay:'💵',off:'🏖️',due:'🧮',carry:'↪️'};
@@ -478,7 +506,7 @@ function wcard(w){const old=w.st=='صفي',c=old&&w.fin?w.fin:wkcalc(w),L=wlogs(
  return `<div class="card"><h2>👷 ${esc(w.n)} ${c.open?'<small class="mu">🏖️ في إجازة</small>':''}</h2>${row('📅','جه '+esc(w.s||'—'),(old?'اتصفى '+esc(w.e||''):'لحد النهاردة')+' · '+c.tot+' يوم'+(c.lv?' · إجازة '+c.lv+' يوم':''),c.worked+' يوم')}${row('💰','مرتبه الشهري','اليوم '+(wsal(w)/30).toFixed(1),f0(wsal(w)))}${w.pd?row('📆','يوم صرف المرتب','كل شهر','يوم '+esc(w.pd)):''}${row('🧮','استحقاقه','',f0(c.earned))}${row('💸','مسحوبات','',f0(c.adv),'bad')}${row('💵','مرتبات قبضها','',f0(c.paid))}${row('🧾',c.net>=0?'المتبقي له':'عليه للمزرعة','',f0(Math.abs(c.net)),c.net>=0?'ok':'bad')}${old?(w.wn?`<p class="mu">${esc(w.wn)}</p>`:'')+B('📲 كشف',`wShare('${w.id}')`):`<div style="display:flex;flex-wrap:wrap;gap:6px">${B('➕ مسحوب',`wLog('${w.id}','adv')`)}${B('🏖️ نزل إجازة',`wLog('${w.id}','off')`)}${c.open?B('↩️ رجع',`wRet('${w.id}')`):''}${B('💵 قبض مرتب',`wLog('${w.id}','pay')`)}${B('🧾 تصفية',`wSet('${w.id}')`)}${B('📲 كشف',`wShare('${w.id}')`)}${B('✏️ تعديل',`wEd('${w.id}')`)}${B('🗑 حذف',`delWorker('${w.id}')`)}</div>`}${lg?`<details style="margin-top:8px"><summary>السجل (${L.length})</summary>${lg}</details>`:''}</div>`}
 function vWk(){const A=S.wk.filter(w=>w.st!='صفي'),O=S.wk.filter(w=>w.st=='صفي').sort((a,b)=>String(b.e).localeCompare(String(a.e))),sg=`<div class="seg"><button class="${WS=='act'?'on':''}" onclick="WS='act';render()">👷 الشغالين</button><button class="${WS=='old'?'on':''}" onclick="WS='old';render()">🗂 أرشيف المصفّيين</button></div>`;
  if(WS=='old')return sg+(O.map(wcard).join('')||'<div class="card"><p class="mu">لسه مفيش عامل اتصفى</p></div>');
- return sg+`<div class="kps"><div class="kp"><span>عدد العمال</span><b>${A.length}</b></div><div class="kp"><span>مرتبات الشهر</span><b>${f0(sum(A,wsal))}</b></div><div class="kp"><span>أجور الدورة (في المصاريف)</span><b>${f0(laborDue())}</b></div></div><button class="pri" onclick="wAdd()">＋ عامل جديد</button>`+(A.map(wcard).join('')||'<div class="card"><p class="mu">سجّل أول عامل</p></div>')}
+ return sg+`<div class="kps"><div class="kp"><span>عدد العمال</span><b>${A.length}</b></div><div class="kp"><span>مرتبات الشهر</span><b>${f0(sum(A,wsal))}</b></div><div class="kp"><span>أجور الدورة (في المصاريف)</span><b>${f0(laborDue())}</b></div></div><button class="pri" onclick="wAdd()">＋ عامل جديد</button><button class="sec" style="width:100%;margin-bottom:12px" onclick="wShareAll()">📲 إرسال كشف كل العمال واتساب</button>`+(A.map(wcard).join('')||'<div class="card"><p class="mu">سجّل أول عامل</p></div>')}
 /* ---------- المصاريف والتوصية ---------- */
 function addExp(){const a=num($('#ea').value),c=$('#ec').value,n=$('#en').value.trim()||CAT[c][1];if(!a)return toast('اكتب المبلغ');S.exp.push({n,a,c,d:$('#ed').value||today()});save();render()}
 function setCat(i,v){S.exp[i].c=v;save();render()}
@@ -724,7 +752,7 @@ function undoable(fn){const before={};for(const k in S)before[k]=JSON.stringify(
  b.innerHTML='<span>اتحذف</span><button style="background:#0f766e;color:#fff;border-radius:10px;padding:8px 14px;font-weight:700">↩️ تراجع</button>';b.style.display='flex';
  b.querySelector('button').onclick=()=>{Object.assign(S,old);save();render();b.style.display='none'};
  clearTimeout(_ut);_ut=setTimeout(()=>b.style.display='none',9000)}
-['delDay','delExp','delSale','delPay','delWl','delStock','delFeed','restDel','mpDel','vDel','delWorker','wgDel'].forEach(n=>{const o=window[n];if(typeof o!='function')return;window[n]=(...a)=>undoable(()=>o(...a))});
+['delDay','delExp','delSale','delPay','delWl','delStock','delFeed','restDel','mpDel','vDel','delWorker','wgDel','medDel'].forEach(n=>{const o=window[n];if(typeof o!='function')return;window[n]=(...a)=>undoable(()=>o(...a))});
 
 boot();
 </script>
